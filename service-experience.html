@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Experience — Unique Touch Beauty Salon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <script src="page-transitions.js"></script>
+  <style>
+    :root {
+      --bg:          #0A0906;
+      --bg-card:     #161310;
+      --gold:        #C9A84C;
+      --gold-light:  #E0C46A;
+      --gold-dim:    rgba(201,168,76,0.12);
+      --cream:       #F4EDD6;
+      --white:       #FFFFFF;
+      --muted:       rgba(255,255,255,0.52);
+      --dim:         rgba(255,255,255,0.28);
+      /* folio theme mapping */
+      --foreground:  var(--white);
+      --background:  var(--bg);
+
+      /* ── responsive spacing scale (fluid, shrinks on small screens) ── */
+      --gutter:      clamp(16px, 5vw, 24px);
+      --gutter-y:    clamp(12px, 3.5vw, 16px);
+      --space-1:     clamp(0.375rem, 1.2vw, 0.5rem);
+      --space-2:     clamp(0.625rem, 2vw, 0.875rem);
+      --space-3:     clamp(0.875rem, 2.6vw, 1.25rem);
+      --space-4:     clamp(1.25rem, 4vw, 2rem);
+      --space-5:     clamp(1.75rem, 5vw, 2.75rem);
+      --space-6:     clamp(2.25rem, 6vw, 3.25rem);
+      --card-radius: clamp(10px, 2.5vw, 16px);
+      --fab-inset-x: clamp(14px, 4.2vw, calc(24px + 1.75rem));
+      --fab-inset-y: clamp(14px, 4.2vw, calc(36px + 0.875rem));
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Keyboard focus — visible on every interactive element, invisible to mouse users */
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+    /* Fluid root: rem scales down proportionally on small screens, 16px at ~1440px. */
+    html { background: var(--bg); font-size: clamp(14px, 13.33px + 0.185vw, 16px); }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ════════ FLOATING NAV (copied from index.html) ════════ */
+    #menuBtn {
+      position: fixed;
+      top: calc(36px + 0.875rem);
+      left: calc(24px + 1.75rem);
+      z-index: 201;
+    }
+.menu-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: none; border: none; cursor: pointer; padding: 0; z-index: 201;
+    }
+    .menu-btn-icon {
+      width: 14px; height: 14px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .menu-btn:hover .menu-btn-icon,
+    .menu-btn.is-open .menu-btn-icon { transform: rotate(180deg); }
+    .menu-btn-label {
+      font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 500;
+      font-variant: small-caps; letter-spacing: 0.08em; color: var(--white);
+      transition: color 0.2s ease; position: relative; width: 2.8em; height: 1em; line-height: 1em;
+    }
+    .menu-btn:hover .menu-btn-label,
+    .menu-btn.is-open .menu-btn-label { color: var(--gold); }
+    .menu-btn-label .lbl-menu, .menu-btn-label .lbl-close {
+      display: block; position: absolute; top: 0; left: 0; white-space: nowrap;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .menu-btn-label .lbl-close { opacity: 0; transform: translateY(4px); }
+    .menu-btn.is-open .menu-btn-label .lbl-menu { opacity: 0; transform: translateY(-4px); }
+    .menu-btn.is-open .menu-btn-label .lbl-close { opacity: 1; transform: translateY(0); }
+
+    .menu-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0); z-index: 198;
+      pointer-events: none; transition: background 0.4s ease;
+    }
+    .menu-backdrop.is-open { background: rgba(0,0,0,0.6); pointer-events: auto; }
+
+    .menu-panel {
+      position: fixed; top: 36px; left: 24px; z-index: 199;
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(180,180,180,0.08) 100%);
+      backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+      border-radius: 20px; border: 1px solid rgba(201,168,76,0.75);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45); overflow: hidden;
+      width: 0; height: 0; min-width: 0; pointer-events: none; border-color: transparent;
+    }
+    .menu-panel.is-open { pointer-events: auto; border-color: rgba(201,168,76,0.75); }
+    .menu-panel-inner {
+      opacity: 0; padding: 24px 36px; transition: opacity 0.2s ease;
+      width: 100%; box-sizing: border-box; display: flex; flex-direction: column;
+    }
+    .menu-panel.links-visible .menu-panel-inner { opacity: 1; }
+    .menu-nav-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .menu-nav-links li {
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(1) { opacity: 1; transform: none; transition-delay: 0.05s; }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.1s; }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.15s; }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.2s; }
+    .menu-nav-links a {
+      font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 400; letter-spacing: 0.04em;
+      color: var(--white); text-decoration: none; display: flex; align-items: center; gap: 0;
+      overflow: hidden; padding: 0; transition: color 0.25s ease;
+    }
+    .menu-nav-links a:hover { color: var(--gold); }
+    .menu-nav-links a .menu-link-arrow {
+      display: inline-flex; width: 0; overflow: hidden; opacity: 0;
+      transition: width 0.3s cubic-bezier(0.65,0,0.35,1), opacity 0.3s ease;
+      flex-shrink: 0; align-items: center;
+    }
+    .menu-nav-links a:hover .menu-link-arrow { width: 1.5rem; opacity: 1; }
+    .menu-nav-links a .menu-link-text { transition: transform 0.3s cubic-bezier(0.65,0,0.35,1); }
+    .menu-nav-links a:hover .menu-link-text { transform: translateX(0.35rem); }
+    .menu-divider { height: 1px; background: rgba(255,255,255,0.20); margin-top: 32px; }
+    .menu-socials {
+      display: flex; flex-direction: row; justify-content: flex-end; align-items: center;
+      gap: 16px; margin-top: 16px;
+    }
+    .menu-social-link { color: var(--white); text-decoration: none; display: flex; align-items: center; transition: color 0.25s ease; }
+    .menu-social-link:hover { color: var(--gold); }
+
+    /* ════════ BUTTONS (copied from index.html) ════════ */
+    .btn-gold {
+      position: relative; display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Montserrat', sans-serif; font-size: 0.875rem; font-weight: 500;
+      letter-spacing: 0; text-transform: capitalize; color: var(--bg); background: var(--gold);
+      height: 2.25rem; padding: 0 12px; border-radius: 100px; text-decoration: none;
+      overflow: hidden; isolation: isolate; min-width: 0; cursor: pointer; border: none;
+    }
+    .btn-gold::before {
+      content: ''; position: absolute; inset: 0; background: var(--gold-light);
+      clip-path: inset(0 100% 0 0); border-radius: inherit;
+      transition: clip-path 0.5s cubic-bezier(0.33, 1, 0.68, 1); z-index: 0;
+    }
+    .btn-gold:hover::before { clip-path: inset(0 0% 0 0); }
+    .btn-gold .btn-arrow {
+      position: relative; z-index: 1; display: flex; align-items: center; flex-shrink: 0;
+      transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    .btn-gold .btn-label { position: relative; z-index: 1; transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1); }
+
+    .btn-ghost {
+      position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+      outline: none; border: 0; text-decoration: none; background: transparent;
+      padding: 0 12px 0 0; font-family: 'Montserrat', sans-serif; white-space: nowrap;
+      flex-shrink: 0; height: 2.25rem;
+    }
+    .btn-ghost::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 38px; background: transparent;
+      border: 1px solid var(--gold); border-radius: 100px;
+      transition: width 0.5s cubic-bezier(0.33, 1, 0.68, 1); z-index: 0;
+    }
+    .btn-ghost:hover::before { width: 100%; }
+    .btn-ghost .btn-arrow {
+      position: relative; z-index: 1; width: 38px; height: 2.25rem; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0; color: var(--white);
+    }
+    .btn-ghost .btn-label {
+      position: relative; z-index: 1; padding: 0; font-family: 'Montserrat', sans-serif;
+      font-size: 0.875rem; font-weight: 500; letter-spacing: 0; text-transform: capitalize;
+      color: var(--white); transform: translateX(8px);
+      transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    .btn-ghost:hover .btn-label { transform: translateX(0); }
+
+    /* ════════ WORD TYPOGRAPHY SWAP ════════ */
+    .word-swap { display: inline-grid; vertical-align: bottom; }
+    .word-swap-mono, .word-swap-cinzel { grid-area: 1 / 1; }
+    .word-swap-mono { transition: opacity 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
+    .word-swap-cinzel {
+      font-family: 'Cinzel', serif; font-weight: 400; font-style: italic;
+      font-size: inherit; white-space: nowrap; opacity: 0;
+      transition: opacity 0.35s cubic-bezier(0.33, 1, 0.68, 1); pointer-events: none;
+    }
+    .btn-gold:hover .word-swap-mono { opacity: 0; }
+    .btn-gold:hover .word-swap-cinzel { opacity: 1; }
+
+    /* ════════ EXPERIENCE SECTION ════════ */
+    #experience {
+      position: relative; width: 100%; height: 100dvh; overflow: hidden;
+      background: var(--bg); isolation: isolate;
+    }
+    /* atmospheric radial wash behind everything */
+    #experience::before {
+      content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(120% 80% at 78% 18%, rgba(201,168,76,0.10) 0%, transparent 55%),
+        radial-gradient(90% 70% at 12% 90%, rgba(201,168,76,0.06) 0%, transparent 60%);
+    }
+
+    /* ── chrome: counter ── */
+    .chrome-counter {
+      position: absolute; bottom: 30px; right: 28px; z-index: 12;
+      display: flex; align-items: center; gap: 12px; pointer-events: none;
+    }
+    .counter {
+      font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.25em; color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .counter .sep { margin: 0 6px; opacity: 0.4; }
+    .counter-rule { height: 1px; width: 32px; background: rgba(244,237,214,0.30); }
+    .eyebrow {
+      position: absolute; left: 28px; bottom: 30px; z-index: 12; pointer-events: none;
+      font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.34em; color: var(--muted);
+    }
+
+    /* ── title list (left desktop / top mobile) ── */
+    .title-wrap {
+      position: absolute; left: 0; z-index: 4; overflow: hidden;
+      -webkit-mask-image: linear-gradient(transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+    }
+    #titleStrip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+    .tr-row {
+      display: flex; flex-direction: row; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; padding: 0 clamp(1.5rem, 4vw, 4.5rem);
+    }
+    .tr-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 0; overflow: hidden; flex-shrink: 0; color: var(--gold);
+      will-change: width, height, opacity, transform;
+    }
+    .tr-icon svg { display: block; width: 100%; height: 100%; flex-shrink: 0; }
+    .tr-row h3 {
+      font-family: 'Cinzel', serif; font-weight: 400; line-height: 1;
+      letter-spacing: -0.005em; white-space: nowrap; color: var(--muted);
+      will-change: transform; position: relative;
+    }
+    .tr-text-base { display: block; }
+    .tr-text-grad {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      display: block; pointer-events: none;
+      background: linear-gradient(180deg, #ffffff 0%, #d4b96a 42%, #6b4e1a 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+      clip-path: inset(100% 0 0 0); will-change: clip-path;
+    }
+    .tr-desc {
+      font-family: 'Montserrat', sans-serif; font-weight: 400;
+      letter-spacing: 0.22em; font-size: 12px; line-height: 1.6;
+      color: var(--white); margin-left: 3.6em; min-width: 0; opacity: 0;
+      will-change: opacity, transform, clip-path;
+    }
+
+    /* ── image strip (right desktop / bottom mobile) ── */
+    .image-wrap { position: absolute; z-index: 3; overflow: hidden; }
+    #imageStrip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+    .img-slot-wrap {
+      position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: center;
+      transform: scale(1); transition: transform 0.6s cubic-bezier(0.22,0.8,0.32,1);
+    }
+    .img-slot-wrap.is-current { transform: scale(1.035); }
+    .img-slot {
+      position: relative; border-radius: 16px;
+      background: var(--bg-card); aspect-ratio: 4 / 5;
+      will-change: transform, opacity; box-shadow: 0 24px 60px -28px rgba(0,0,0,0.85);
+    }
+    .img-slot-inner {
+      position: absolute; inset: 0; overflow: hidden; border-radius: 16px; z-index: 1;
+    }
+    .img-slot img, .img-slot video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .img-slot .slot-grad {
+      position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(to top, rgba(10,9,6,0.42) 0%, rgba(10,9,6,0.04) 38%, transparent 70%);
+    }
+    .img-slot .slot-ring {
+      position: absolute; inset: 0; border-radius: 16px; pointer-events: none;
+      border: 1px solid rgba(201,168,76,0.0); transition: border-color 0.4s ease;
+    }
+    @property --gradient-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @keyframes gradient-rotate {
+      to { --gradient-angle: 360deg; }
+    }
+    .img-slot-wrap.is-current .img-slot::before {
+      content: '';
+      position: absolute; inset: -2px; border-radius: 18px;
+      background: conic-gradient(
+        from var(--gradient-angle),
+        #584827 0%,
+        #c7a03c 37%,
+        #f9de90 50%,
+        #c7a03c 63%,
+        #584827 75%,
+        #c7a03c 87%,
+        #f9de90 100%
+      );
+      animation: gradient-rotate 10s linear infinite;
+      z-index: 0;
+    }
+
+    /* ── desktop geometry ── */
+    .title-wrap { width: 50%; top: 10dvh; height: 80dvh; opacity: 0; will-change: transform, opacity, filter; }
+    .image-wrap { right: 0; top: 0; width: 50%; height: 100dvh; opacity: 0; will-change: transform, opacity, filter; }
+
+    /* ── mobile geometry ── */
+    @media (max-width: 767px) {
+      .title-wrap {
+        width: 100%; top: 0; height: 50dvh;
+      }
+      .tr-row { flex-direction: column; align-items: center; text-align: center; padding: 0 1.25rem; }
+      .tr-row h3 { white-space: normal; }
+      .tr-icon { display: none; }
+      .tr-desc { margin-left: 0; margin-top: 1.1em; }
+      .image-wrap {
+        left: 0; right: auto; width: 100%; top: 50dvh; height: 50dvh;
+        -webkit-mask-image: linear-gradient(transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+        mask-image: linear-gradient(transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+      }
+      .chrome-counter { bottom: 22px; right: 20px; }
+      .eyebrow { left: 20px; bottom: 22px; }
+      #menuBtn { top: calc(20px + 0.5rem); left: calc(16px + 0.5rem); }
+    }
+
+    /* ── cursor ring ── */
+    #cursorRing {
+      pointer-events: none; position: absolute; left: 0; top: 0; z-index: 14;
+      display: grid; place-items: center; width: 76px; height: 76px;
+      transform: translate3d(-100px,-100px,0) translate(-50%,-50%);
+      border-radius: 50%; border: 1px solid rgba(255,255,255,0.55);
+      mix-blend-mode: difference; opacity: 0;
+      transition: opacity 0.26s ease-out; will-change: transform, opacity;
+    }
+    #cursorRing span {
+      font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.32em; color: #fff;
+    }
+    @media (hover: none) { #cursorRing { display: none; } }
+
+    /* ════════ DETAIL PANEL ════════ */
+    #detail { position: absolute; inset: 0; z-index: 30; display: none; }
+    #detail.is-active { display: block; }
+    .detail-scrim { position: absolute; inset: 0; background: var(--bg); opacity: 0; }
+    .detail-scrim::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(110% 80% at 82% 15%, rgba(201,168,76,0.10) 0%, transparent 55%);
+    }
+
+    .detail-content {
+      position: absolute; left: 0; top: 0; height: 100%;
+      width: calc(40vw - 60px);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      padding: clamp(2rem, 4vw, 4.5rem) clamp(1.75rem, 3.4vw, 4rem);
+      overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    }
+    .detail-content::-webkit-scrollbar { display: none; }
+    .detail-content { scrollbar-width: none; }
+
+    #menuBtn { transition: opacity 0.3s ease; }
+
+    .d-eyebrow {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px; font-weight: 400;
+      letter-spacing: 0.22em;
+      color: var(--white); margin-top: 2rem;
+    }
+    .d-title {
+      font-family: 'Cinzel', serif; font-weight: 400; line-height: 1;
+      letter-spacing: -0.005em; white-space: nowrap;
+      font-size: clamp(2.4rem, 7dvh, 5rem); margin-top: 0.6rem;
+      transform-origin: top left; visibility: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #d4b96a 42%, #6b4e1a 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+    }
+    .d-intro { margin-top: 1.6rem; padding-bottom: 1.8rem; }
+    .d-intro p {
+      font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: 0.975rem;
+      line-height: 1.75; color: var(--white); margin-bottom: 0.9rem;
+      white-space: nowrap; overflow: hidden;
+    }
+    .d-intro p:first-child {
+      font-size: 24px; line-height: 1.4;
+      white-space: normal; overflow: visible;
+    }
+
+    .d-section-label {
+      font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 600;
+      text-transform: none; letter-spacing: 0.02em; color: var(--white);
+      margin-bottom: 0.9rem;
+    }
+    .d-block { margin-top: 2.4rem; }
+    .d-block--spaced { margin-top: 4rem; }
+
+    /* treatment chooser */
+    .d-chooser { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; }
+    .d-chooser-label {
+      font-size: 16px; letter-spacing: 0.02em;
+    }
+    .d-chooser-label .lbl-choose { color: var(--gold); }
+    .d-pill-wrap {
+      position: relative; display: inline-flex; flex-direction: column; align-items: center;
+    }
+    .pill-info-btn {
+      position: absolute; top: -5px; right: -5px; z-index: 10;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--bg); border: 1px solid rgba(201,168,76,0.55);
+      color: var(--gold); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: Georgia, serif; font-style: italic; font-size: 8px; line-height: 1;
+      padding: 0; transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+      opacity: 0; pointer-events: none;
+    }
+    .d-pill-wrap:has(.d-pill.is-active) .pill-info-btn { opacity: 1; pointer-events: auto; }
+    .pill-info-btn:hover { background: rgba(201,168,76,0.12); border-color: var(--gold); }
+    .pill-tooltip {
+      position: absolute; bottom: calc(100% + 10px); left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      width: max-content; max-width: 160px;
+      background: rgba(10,9,6,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(201,168,76,0.38); border-radius: 8px;
+      padding: 0.45rem 0.7rem;
+      font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 400;
+      letter-spacing: 0.04em; color: var(--white); line-height: 1.5; text-align: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 20;
+    }
+    .d-pill-wrap:has(.pill-info-btn:hover) .pill-tooltip,
+    .d-pill-wrap:has(.pill-info-btn:focus-visible) .pill-tooltip,
+    .d-pill-wrap.tip-open .pill-tooltip {
+      opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto;
+    }
+    .d-pill {
+      position: relative;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 500;
+      letter-spacing: 0.01em; color: var(--white); cursor: pointer;
+      padding: 0.55rem 1.05rem; border-radius: 100px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(201,168,76,0.22);
+      transition: border-color 0.5s cubic-bezier(0.22,0.8,0.32,1),
+                  background 0.4s cubic-bezier(0.22,0.8,0.32,1),
+                  color 0.3s ease;
+      isolation: isolate;
+    }
+    .d-pill:hover:not(.is-active) { border-color: rgba(201,168,76,0.55); }
+    /* conic border: ::before fills the full border-box, ::after fills the padding-box */
+    .d-pill::before {
+      content: ''; position: absolute; inset: -1.5px; border-radius: 102px;
+      background: conic-gradient(
+        from var(--gradient-angle),
+        #584827 0%, #c7a03c 37%, #f9de90 50%,
+        #c7a03c 63%, #584827 75%, #c7a03c 87%, #f9de90 100%
+      );
+      animation: gradient-rotate 4s linear infinite;
+      opacity: 0; transition: opacity 0.5s cubic-bezier(0.22,0.8,0.32,1);
+      z-index: -2; pointer-events: none;
+    }
+    .d-pill::after {
+      content: ''; position: absolute; inset: 0; border-radius: 100px;
+      background: color-mix(in srgb, var(--gold) 15%, var(--bg)); opacity: 0;
+      transition: opacity 0.5s cubic-bezier(0.22,0.8,0.32,1);
+      z-index: -1; pointer-events: none;
+    }
+    .d-pill.is-active { border-color: transparent; background: rgba(201,168,76,0.10); }
+    .d-pill.is-active::before { opacity: 1; }
+    .d-pill.is-active::after { opacity: 1; }
+    /* icon that fades in + pushes text on active */
+    .pill-icon {
+      display: flex; align-items: center; justify-content: center;
+      width: 0; opacity: 0; color: var(--gold); flex-shrink: 0;
+      overflow: hidden;
+      transition: width 0.45s cubic-bezier(0.22,0.8,0.32,1),
+                  opacity 0.35s ease,
+                  margin-right 0.45s cubic-bezier(0.22,0.8,0.32,1);
+      position: relative; z-index: 1;
+    }
+    .pill-icon svg { width: 9px; height: 8px; flex-shrink: 0; display: block; }
+    .d-pill.is-active .pill-icon { width: 9px; opacity: 1; margin-right: 5px; }
+    .pill-text { position: relative; z-index: 1; }
+
+    /* details grid */
+    .d-grid-wrap { position: relative; border-radius: 14px; overflow: hidden; }
+    .d-grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 5.5rem; }
+    .d-cell { background: transparent; padding: 1.1rem 1.25rem; }
+    .d-cell:nth-child(1), .d-cell:nth-child(3) { border-right: 1px solid rgba(201,168,76,0.16); }
+    .d-cell:nth-child(1), .d-cell:nth-child(2) { border-bottom: 1px solid rgba(201,168,76,0.16); }
+    .d-cross { position: absolute; inset: 0; pointer-events: none; }
+    .d-cross-h {
+      position: absolute; top: 50%; left: 0; right: 0; height: 1px;
+      background: var(--gold-light); transform: scaleX(0); transform-origin: center;
+      will-change: transform, opacity;
+    }
+    .d-cross-v {
+      position: absolute; top: 0; bottom: 0; left: 50%; width: 1px;
+      background: var(--gold-light); transform: scaleY(0); transform-origin: center;
+      will-change: transform, opacity;
+    }
+    .d-cell-k {
+      font-family: 'Montserrat', sans-serif; font-size: 9.5px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted); margin-bottom: 0.45rem;
+    }
+    .d-cell-v {
+      font-family: 'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 500; color: var(--white);
+      transition: opacity 0.28s cubic-bezier(0.22,0.8,0.32,1);
+    }
+    .d-cell-v .xcg { font-family: 'Montserrat', sans-serif; font-size: 0.7rem; font-weight: 500; color: var(--gold); margin-left: 0.3em; letter-spacing: 0.06em; }
+
+    /* favorites */
+    .d-favs { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; }
+    .d-fav { display: flex; align-items: center; gap: 0.85rem; }
+    .d-fav-icon { flex-shrink: 0; color: var(--gold); display: flex; align-items: center; transform-origin: center; }
+    .d-fav-text { font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 300; color: rgba(244,237,214,0.82); }
+
+    /* testimonial */
+    .d-quote {
+      background: rgba(0,0,0,0.10);
+      backdrop-filter: blur(35px);
+      -webkit-backdrop-filter: blur(35px);
+      border-radius: 20px;
+      border: 1px solid rgba(201,168,76,0.75);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      padding: 0.875rem 1.125rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .d-stars { color: var(--gold); letter-spacing: 0.05em; font-size: 0.6875rem; line-height: 1; text-align: center; }
+    .d-quote blockquote {
+      font-family: 'Montserrat', sans-serif; font-style: italic; font-weight: 300;
+      font-size: 1.05rem; line-height: 1.6; color: var(--white); margin: 0;
+    }
+    .d-quote cite {
+      display: block; font-style: normal; font-weight: 500;
+      font-size: 1rem; letter-spacing: 0.04em; text-transform: capitalize; color: var(--gold);
+      padding-top: 0.125rem; text-align: center;
+    }
+
+    /* accordion */
+    .d-acc-item { border-bottom: 1px solid rgba(255,255,255,0.10); }
+    .d-acc-head {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      background: none; border: none; cursor: pointer; padding: 1.05rem 0; text-align: left !important;
+      font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 500;
+      letter-spacing: 0.02em; color: var(--white); transition: color 0.25s ease;
+    }
+    .d-acc-head:hover { color: var(--gold); }
+    .d-acc-plus { position: relative; width: 12px; height: 12px; flex-shrink: 0; }
+    .d-acc-plus::before, .d-acc-plus::after {
+      content: ''; position: absolute; background: var(--gold);
+      transition: transform 0.4s cubic-bezier(0.65,0,0.35,1), opacity 0.4s ease;
+    }
+    .d-acc-plus::before { left: 0; top: 50%; width: 100%; height: 1.5px; transform: translateY(-50%); }
+    .d-acc-plus::after { top: 0; left: 50%; height: 100%; width: 1.5px; transform: translateX(-50%); }
+    .d-acc-item.is-open .d-acc-plus::after { transform: translateX(-50%) scaleY(0); opacity: 0; }
+    .d-acc-body { overflow: hidden; max-height: 0; transition: max-height 0.45s cubic-bezier(0.65,0,0.35,1); }
+    .d-acc-body p {
+      font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: 0.9rem;
+      line-height: 1.7; color: rgba(244,237,214,0.66); padding: 0 0 1.1rem;
+    }
+
+    /* booking */
+    .d-booking { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(201,168,76,0.18); padding-bottom: 1rem; }
+    .d-booking h4 {
+      font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 1.7rem; color: var(--white); margin-bottom: 0.6rem;
+    }
+    .d-booking p {
+      font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: 0.95rem;
+      line-height: 1.65; color: rgba(244,237,214,0.72); margin-bottom: 1.4rem;
+    }
+
+    /* detail image (right anchor) — pinned to viewport on desktop, in-flow on mobile */
+    .detail-image-frame {
+      position: fixed; top: 30px; right: 30px; left: auto;
+      width: 60vw;
+      height: 60vh;
+      z-index: 1;
+    }
+    .detail-image {
+      position: relative; height: 100%; width: 100%; overflow: hidden; border-radius: 16px;
+      background: var(--bg-card); transform-origin: top left; visibility: hidden;
+      box-shadow: 0 40px 90px -40px rgba(0,0,0,0.9); border: 1px solid rgba(201,168,76,0.28);
+    }
+    .detail-image img, .detail-image video { width: 100%; height: 100%; object-fit: cover; display: block; will-change: transform; }
+    .detail-image .slot-grad {
+      position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(to top, rgba(10,9,6,0.42) 0%, rgba(10,9,6,0.04) 38%, transparent 70%);
+    }
+    .detail-image-frame .btn-ghost {
+      position: absolute; top: 16px; left: 16px; z-index: 2;
+    }
+
+    [data-detail-reveal] { will-change: transform, opacity, filter; }
+
+    /* mobile detail = single scroll column, image at top */
+    @media (max-width: 767px) {
+      .detail-content {
+        width: 100%; padding: 5.5rem 1.5rem 3rem; gap: 0;
+      }
+      .d-title { white-space: normal; font-size: 2.86dvh; }
+      .detail-image-frame {
+        position: relative; top: auto; right: auto; bottom: auto; left: auto;
+        width: 100%; height: auto; aspect-ratio: 4 / 5; margin-bottom: 2.6rem; align-self: stretch;
+        flex: none; order: -1;
+      }
+      .d-grid { grid-template-columns: 1fr 1fr; }
+      .detail-image-frame .btn-ghost { left: 8px; top: 8px; }
+    }
+
+    /* ── small phone (≤480) — tighten detail padding & wrap the title split ── */
+    @media (max-width: 480px) {
+      .detail-content { padding: 5rem var(--gutter) 2.5rem; }
+      .d-grid { grid-template-columns: 1fr; }
+      .tr-row { padding: 0 var(--gutter); }
+    }
+
+    /* ════════ BOOKING MODAL ════════ */
+    #bookingModal { position: fixed; inset: 0; z-index: 40; display: none; }
+    #bookingModal.is-active { display: block; }
+    .bm-scrim { position: absolute; inset: 0; background: rgba(5,4,2,0.55); opacity: 0; cursor: pointer; }
+    .bm-panel {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) scale(0.94);
+      width: min(440px, calc(100vw - 32px)); height: min(720px, calc(100dvh - 64px));
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(180,180,180,0.06) 100%);
+      backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+      border-radius: 22px; border: 1px solid rgba(201,168,76,0.75);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.6); overflow: hidden; opacity: 0;
+      display: flex; flex-direction: column;
+    }
+    .bm-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid rgba(201,168,76,0.22); flex-shrink: 0;
+    }
+    .bm-title {
+      font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 400; color: var(--white);
+      letter-spacing: 0.04em;
+    }
+    .bm-head-actions { display: flex; align-items: center; gap: 14px; }
+    .bm-newtab {
+      font-family: 'Montserrat', sans-serif; font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.06em; color: var(--muted); text-decoration: none;
+      transition: color 0.25s ease; white-space: nowrap;
+    }
+    .bm-newtab:hover { color: var(--gold); }
+    .bm-close {
+      width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.4);
+      background: rgba(0,0,0,0.2); color: var(--white); cursor: pointer; display: grid; place-items: center;
+      transition: background 0.25s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .bm-close:hover { background: rgba(201,168,76,0.2); transform: rotate(90deg); }
+    .bm-frame-wrap { flex: 1; position: relative; background: #fff; }
+    .bm-frame-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .bm-loading {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted); background: var(--bg-card); z-index: 1;
+    }
+
+    /* ── scroll progress bar ── */
+    #scroll-progress {
+      position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+      background: var(--gold);
+      z-index: 9999;
+      pointer-events: none;
+      transform-origin: left;
+      transition: width 0.1s linear;
+      opacity: 0;
+    }
+    #scroll-progress.is-active { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div id="scroll-progress"></div>
+
+  <!-- ═══════════ MENU ═══════════ -->
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+  <div class="menu-panel" id="menuPanel" role="dialog" aria-label="Site navigation">
+    <div class="menu-panel-inner">
+      <ul class="menu-nav-links">
+        <li><a href="index.html"><span class="menu-link-arrow"><svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-link-text">Home</span></a></li>
+        <li><a href="service-experience.html"><span class="menu-link-arrow"><svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-link-text">Service</span></a></li>
+        <li><a href="gallery.html"><span class="menu-link-arrow"><svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-link-text">Gallery</span></a></li>
+      </ul>
+      <div class="menu-divider"></div>
+      <div class="menu-socials">
+        <a href="https://www.facebook.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a href="https://www.instagram.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+        <a href="https://www.tiktok.com/@uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z"/></svg></a>
+      </div>
+    </div>
+  </div>
+
+  <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="menuPanel">
+    <span class="menu-btn-icon"><img src="brand_assets/buller-list.svg" width="14" height="14" alt="" aria-hidden="true"></span>
+    <span class="menu-btn-label"><span class="lbl-menu">Menu</span><span class="lbl-close">Close</span></span>
+  </button>
+
+<!-- ═══════════ EXPERIENCE ═══════════ -->
+  <section id="experience" aria-label="Service experience">
+    <div class="chrome-counter" data-chrome>
+      <span class="counter"><span id="counterCur">01</span><span class="sep">/</span><span id="counterTotal">05</span></span>
+      <span class="counter-rule"></span>
+    </div>
+    <span class="eyebrow" data-chrome>The Experience</span>
+
+    <div class="title-wrap"><div id="titleStrip"></div></div>
+    <div class="image-wrap"><div id="imageStrip"></div></div>
+
+    <div id="cursorRing" aria-hidden="true"><span>Open</span></div>
+
+    <!-- detail panel (filled on open) -->
+    <div id="detail" aria-modal="true" role="dialog"></div>
+  </section>
+
+  <!-- ═══════════ BOOKING MODAL ═══════════ -->
+  <div id="bookingModal" role="dialog" aria-modal="true" aria-label="Book an appointment">
+    <div class="bm-scrim" data-bm-close></div>
+    <div class="bm-panel" data-no-wheel>
+      <div class="bm-head">
+        <span class="bm-title" id="bmTitle">Book Your Appointment</span>
+        <div class="bm-head-actions">
+          <a class="bm-newtab" id="bmNewTab" href="https://uniquetouchk1do.setmore.com/uniquetouchbeautysalon" target="_blank" rel="noopener">Open in new tab ↗</a>
+          <button class="bm-close" data-bm-close aria-label="Close booking">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="bm-frame-wrap">
+        <div class="bm-loading" id="bmLoading">Opening booking…</div>
+        <iframe id="bmFrame" title="Setmore booking" allow="payment"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script>
+  /* ════════════════════════════════════════════════════════════════
+     SERVICE EXPERIENCE — wheel-jacked infinite reel + FLIP detail
+     Ported from folio.md to vanilla JS + GSAP, Unique Touch design.
+     ════════════════════════════════════════════════════════════════ */
+  const BOOKING_URL = 'https://uniquetouchk1do.setmore.com/uniquetouchbeautysalon';
+
+  // ── Category data (reused + enriched from existing site) ──
+  const CATS = [
+    {
+      name: 'Massage',
+      slug: 'massage',
+      descriptor: 'Calming · Restorative · Grounding',
+      microcopy: 'Let skilled, caring hands melt the tension away.',
+      img: 'brand_assets/massage-card.webp',
+      video: 'brand_assets/serivce-page-massage/serivce-page-massage.mp4',
+      intro: [
+        'Where tension ends and relaxation begins.',
+        'Time dedicated entirely to your wellbeing.'
+      ],
+      treatments: [
+        { name: 'Full Body Relax Massage', dur: '30 min', price: 'XCG 85.60', maint: 'Monthly', best: 'Everyday tension & stress' },
+        { name: 'A Unique Beach Massage',  dur: '45 min', price: 'XCG 200.00', maint: 'A special treat', best: 'A moment under the open sky' }
+      ],
+      favs: ['Tension that finally lets go', 'Calm that lingers for days', 'A reset for body and mind', 'Time that is purely yours'],
+      review: { text: 'Gil is the best, her professionalism, charisma and attention to your body!!! best experience Ever!!', name: 'Tisainy Girigori Reina' },
+      info: {
+        Preparation: 'Arrive a few minutes early, hydrated and unhurried. Let us know about any areas of tension or sensitivity so we can tailor the pressure to you.',
+        Aftercare: 'Drink plenty of water and give yourself space to rest. The calm only deepens in the hours afterward.',
+        Maintenance: 'A massage every few weeks keeps tension from building back up and your body feeling its best.'
+      }
+    },
+    {
+      name: 'Facial & Skin',
+      slug: 'facial',
+      descriptor: 'Renewed · Healthy · Glowing',
+      microcopy: 'A personalized facial designed for your unique skin.',
+      img: 'brand_assets/facial-service.webp',
+      video: 'brand_assets/gallery-001.mp4',
+      intro: [
+        'Healthy skin never goes out of style.',
+        'Tailored treatments for a complexion that feels refreshed and radiant.'
+      ],
+      treatments: [
+        { name: 'Facial',           dur: '60 min', price: 'XCG 80.60',  maint: 'Every 4–6 weeks', best: 'A glow-restoring deep cleanse' },
+        { name: 'Vajacial',         dur: '90 min', price: 'XCG 115.60', maint: 'Every 4 weeks',   best: 'Intimate, expert, discreet care' },
+        { name: 'Deluxe Beard Spa', dur: '60 min', price: 'XCG 50.00',  maint: 'Monthly',         best: 'The modern gentleman' }
+      ],
+      favs: ['Skin that glows from within', 'A calmer, clearer complexion', 'Care tailored to your skin', 'A ritual that feels like rest'],
+      review: { text: 'A personalized session to my skincare needs. A very great and relaxing experience!', name: 'Viomar Lindo' },
+      info: {
+        Preparation: 'Come with clean, product-free skin if you can, and skip strong exfoliants for a day or two beforehand.',
+        Aftercare: 'Keep it gentle for 24 hours, stay hydrated, and protect your skin from direct sun to hold onto that glow.',
+        Maintenance: 'A facial every four to six weeks keeps your skin balanced, clear, and radiant year-round.'
+      }
+    },
+    {
+      name: 'Waxing',
+      slug: 'waxing',
+      descriptor: 'Smooth · Confident · Effortless',
+      microcopy: 'Total smoothness. Total confidence. Utterly you.',
+      img: 'brand_assets/waxing-card.webp',
+      video: 'brand_assets/service-page-waxing.mp4',
+      intro: [
+        'Smooth skin. Confident moments.',
+        'Precision waxing designed around your comfort.'
+      ],
+      treatments: [
+        { name: 'Hollywood',    dur: '45 min', price: 'XCG 65.60', maint: 'Every 4 weeks',   best: 'Complete, lasting smoothness' },
+        { name: 'Brazilian',    dur: '45 min', price: 'XCG 60.60', maint: 'Every 4 weeks',   best: 'Clean and confident' },
+        { name: 'Eyebrows Wax', dur: '15 min', price: 'XCG 15.60', maint: 'Every 2–3 weeks', best: 'Perfectly framed brows' },
+        { name: 'Full Leg',     dur: '90 min', price: 'XCG 60.60', maint: 'Every 4–6 weeks', best: 'Weeks of smoothness' }
+      ],
+      favs: ['Smoothness that lasts for weeks', 'A quick, comfortable visit', 'Total privacy and care', 'Confidence you can feel'],
+      review: { text: 'Prome biaha mi a bishita pa un waxing service anto mi ta super kontentu, mi a sintimi asina comfortable. Mita rekomenda 100%✨', name: 'Saphira K. Mercera' },
+      info: {
+        Preparation: 'Let hair grow to about a grain of rice in length, gently exfoliate the day before, and avoid lotions on the day.',
+        Aftercare: 'Skip heat, sweat, and tight clothing for 24 hours. Soothe with a light, fragrance-free moisturizer.',
+        Maintenance: 'Rebooking every three to four weeks keeps regrowth fine and waxing more comfortable each time.'
+      }
+    },
+    {
+      name: 'Lashes',
+      slug: 'lashes',
+      descriptor: 'Lifted · Open · Effortless',
+      microcopy: 'Full, beautiful lashes that speak for themselves.',
+      img: 'brand_assets/lashes-card.webp',
+      video: 'brand_assets/gallery-003.mp4',
+      intro: [
+        'Effortless beauty starts with the eyes.',
+        'Customized lashes designed to look natural, feel comfortable, and turn heads.'
+      ],
+      treatments: [
+        { name: 'Hybrid Lash Extensions', dur: '120 min', price: 'XCG 85.60', maint: 'Refill every 2–3 weeks', best: 'Natural-meets-glam' },
+        { name: 'Volume Lash Extensions', dur: '180 min', price: 'XCG 95.60', maint: 'Refill every 2–3 weeks', best: 'Full, dramatic lashes' },
+        { name: 'Refill — One by One',     dur: '90 min',  price: 'XCG 50.60', maint: 'Every 2–3 weeks',     best: 'Keeping your set full' },
+        { name: 'Refill — Volume',         dur: '150 min', price: 'XCG 70.60', maint: 'Every 2–3 weeks',     best: 'Maintaining your volume' }
+      ],
+      favs: ['Effortless, mascara-free mornings', 'Eyes that look open and awake', 'A set shaped just for you', 'Compliments that keep coming'],
+      review: { text: 'Good communication and an even better service ✨', name: 'Saphira K. Mercera' },
+      info: {
+        Preparation: 'Arrive with clean, makeup-free eyes and skip caffeine if you can — it helps you stay relaxed during application.',
+        Aftercare: 'Keep lashes dry for 24 hours, avoid oil-based products, and brush them gently each morning.',
+        Maintenance: 'A refill every two to three weeks keeps your set looking full and fresh.'
+      }
+    },
+    {
+      name: 'Nails',
+      slug: 'nails',
+      descriptor: 'Polished · Tidy · Cared-for',
+      microcopy: 'Every detail considered, every nail perfected.',
+      img: 'brand_assets/nails-card.webp',
+      video: 'brand_assets/service-page-nails.mp4',
+      intro: [
+        'More than a manicure.',
+        'A polished expression of your personal style.'
+      ],
+      treatments: [
+        { name: 'Manicure', dur: '60 min',  price: 'XCG 45.60', maint: 'Every 2–3 weeks', best: 'Polished, tidy hands' },
+        { name: 'Pedicure', dur: '120 min', price: 'XCG 55.60', maint: 'Every 3–4 weeks', best: 'Soft, cared-for feet · Coming Soon' }
+      ],
+      favs: ['A flawless, lasting finish', 'Hands and feet that feel cared for', 'A calm moment to switch off', 'Details that feel put-together'],
+      review: { text: 'Hopi bon servisio!!', name: 'Jhuvienca Hooi' },
+      info: {
+        Preparation: 'Come as you are. If you have existing polish or gel, arrive a little early so we can remove it gently.',
+        Aftercare: 'Give polish a few minutes to fully set, and moisturize hands and feet daily to keep them soft.',
+        Maintenance: 'Every two to three weeks keeps your nails looking fresh and your skin nourished.'
+      }
+    },
+    {
+      name: 'Makeup',
+      slug: 'makeup',
+      descriptor: 'Polished · Radiant · Camera-ready',
+      microcopy: 'A flawless finish, made to feel like you.',
+      img: 'brand_assets/makeup-service.webp',
+      video: 'brand_assets/service_page_makeup/service_page_makeup.mp4',
+      intro: [
+        'Refined, radiant, unforgettable.',
+        'Makeup designed to enhance—not hide—what makes you beautiful.'
+      ],
+      treatments: [
+        { name: 'Makeup Application', dur: '60 min', price: 'XCG 85.00', maint: 'Per occasion', best: 'Special days, nights out & photos' }
+      ],
+      favs: ['A look that lasts the whole night', 'Makeup that photographs beautifully', 'A face that still feels entirely yours', 'Confidence the moment you look up'],
+      review: { text: 'A finish that feels like you, only more radiant — flawless from the first touch-up to the last.' },
+      info: {
+        Preparation: 'Arrive with clean, moisturized skin and skip heavy SPF if you can — it helps makeup apply smoothly and last longer.',
+        Aftercare: 'Avoid touching your face throughout the day, and carry an oil-free blotting sheet for an easy refresh later on.',
+        Maintenance: 'Book ahead for special occasions, and ask about a trial session if it is for a big day.'
+      }
+    }
+  ];
+
+  const ARROW = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const PILL_ICON_SVG = '<svg width="9" height="8" viewBox="0 0 10 9" fill="none" aria-hidden="true"><ellipse cx="4.62204" cy="4.5" rx="1.54733" ry="4.5" fill="currentColor"/><ellipse cx="4.64218" cy="4.55933" rx="1.5" ry="4.642" transform="rotate(90 4.64218 4.55933)" fill="currentColor"/></svg>';
+
+  function accentuate(text) {
+    // Split sentence into medium-weight (important) + light-weight (supporting) spans
+    const dotSpace = text.match(/^(.+?\.)(\s+.+)$/);
+    if (dotSpace) return `<span style="font-weight:500">${dotSpace[1]}</span> <span style="font-weight:300">${dotSpace[2]}</span>`;
+    const andIdx = text.toLowerCase().indexOf(' and ');
+    if (andIdx > 6) return `<span style="font-weight:500">${text.slice(0, andIdx)}</span><span style="font-weight:300"> ${text.slice(andIdx + 1)}</span>`;
+    const commaIdx = text.indexOf(',');
+    if (commaIdx > 3) return `<span style="font-weight:500">${text.slice(0, commaIdx + 1)}</span><span style="font-weight:300"> ${text.slice(commaIdx + 2)}</span>`;
+    const words = text.split(' ');
+    const mid = Math.ceil(words.length / 2);
+    return `<span style="font-weight:500">${words.slice(0, mid).join(' ')}</span> <span style="font-weight:300">${words.slice(mid).join(' ')}</span>`;
+  }
+
+  /* ════════ MENU PANEL (simplified from index.html) ════════ */
+  (function () {
+    const menuBtn = document.getElementById('menuBtn');
+    const menuPanel = document.getElementById('menuPanel');
+    const menuBackdrop = document.getElementById('menuBackdrop');
+    let isOpen = false;
+    window.__menuOpen = () => isOpen;
+    function openMenu() {
+      if (isOpen) return; isOpen = true;
+      menuBtn.classList.add('is-open'); menuBtn.setAttribute('aria-expanded', 'true');
+      menuBackdrop.classList.add('is-open'); menuPanel.classList.add('is-open');
+      const r = menuBtn.getBoundingClientRect();
+      // On mobile, center the panel and cap its width so it never overflows the
+      // viewport edge; desktop keeps the button-left-anchored 360px panel.
+      const isMobile = window.innerWidth <= 767;
+      const panelW = isMobile ? Math.min(360, window.innerWidth - 32) : 360;
+      menuPanel.style.left = isMobile ? ((window.innerWidth - panelW) / 2) + 'px' : r.left + 'px';
+      menuPanel.style.top = (r.bottom + 8) + 'px';
+      menuPanel.style.transition = 'width 0.32s cubic-bezier(0.65,0,0.35,1)';
+      menuPanel.style.width = panelW + 'px';
+      setTimeout(() => {
+        menuPanel.style.transition = 'height 0.36s cubic-bezier(0.65,0,0.35,1)';
+        menuPanel.style.height = '224px';
+        setTimeout(() => menuPanel.classList.add('links-visible'), 120);
+        setTimeout(() => { menuPanel.style.height = 'auto'; }, 360);
+      }, 300);
+    }
+    function closeMenu() {
+      if (!isOpen) return; isOpen = false;
+      menuBtn.classList.remove('is-open'); menuBtn.setAttribute('aria-expanded', 'false');
+      menuBackdrop.classList.remove('is-open'); menuPanel.classList.remove('links-visible');
+      setTimeout(() => {
+        const h = menuPanel.getBoundingClientRect().height;
+        menuPanel.style.height = h + 'px'; menuPanel.getBoundingClientRect();
+        menuPanel.style.transition = 'height 0.36s cubic-bezier(0.65,0,0.35,1)';
+        menuPanel.style.height = '0';
+        setTimeout(() => {
+          menuPanel.style.transition = 'width 0.32s cubic-bezier(0.65,0,0.35,1)';
+          menuPanel.style.width = '0';
+          setTimeout(() => { menuPanel.classList.remove('is-open'); menuPanel.style.top = ''; }, 320);
+        }, 340);
+      }, 180);
+    }
+    window.__closeMenu = closeMenu;
+    menuBtn.addEventListener('click', () => isOpen ? closeMenu() : openMenu());
+    menuBackdrop.addEventListener('click', closeMenu);
+  })();
+
+  /* ════════ Button arrow↔label swap (copied from index.html) ════════ */
+  function attachBtnSwap(btn) {
+    const arrow = btn.querySelector('.btn-arrow');
+    const label = btn.querySelector('.btn-label');
+    if (!arrow || !label) return;
+    btn.addEventListener('mouseenter', () => {
+      const gap = parseFloat(getComputedStyle(btn).gap) || 8;
+      arrow.style.transform = `translateX(${label.offsetWidth + gap}px)`;
+      label.style.transform = `translateX(-${arrow.offsetWidth + gap}px)`;
+    });
+    btn.addEventListener('mouseleave', () => { arrow.style.transform = ''; label.style.transform = ''; });
+  }
+  document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
+
+  /* ════════════════════ REEL ════════════════════ */
+  const N = CATS.length, LOOP_COPIES = 3, RENDERED = N * LOOP_COPIES;
+  const POS_MIN = N, POS_MAX = 2 * N;
+  const SMOOTHING = 0.14, WHEEL_CAP = 200, SNAP_IDLE = 90, CURSOR_LERP = 0.22;
+
+  const DESKTOP = {
+    titleTopVh: 10, titleMidVh: 40, titleSlotVh: 16,
+    titleFontVhMax: 5.6, titleFontVhMin: 2.7,
+    imageWrapperTopVh: 0, imageWrapperMidViewportVh: 50,
+    imageHeightVh: 60, imagePitchVh: 65, imageOffsetPx: 0,
+    pixelsPerItem: 600
+  };
+  const MOBILE = {
+    titleTopVh: 0, titleMidVh: 45, titleSlotVh: 10,
+    titleFontVhMax: 3.0, titleFontVhMin: 2.5,
+    imageWrapperTopVh: 50, imageWrapperMidViewportVh: 69,
+    imageHeightVh: 38, imagePitchVh: 42, imageOffsetPx: 20,
+    pixelsPerItem: 120
+  };
+
+  const mq = window.matchMedia('(max-width: 767px)');
+  let LAYOUT = mq.matches ? MOBILE : DESKTOP;
+
+  // state
+  let targetPos = POS_MIN, pos = POS_MIN, activeIdx = POS_MIN;
+  let phase = 'idle';              // idle | opening | detail | closing
+  let detailOpen = false, navigating = false, entranceDone = false;
+  let onSection = false, hoveringSlot = false;
+  let lastWheelTime = 0;
+  const navProxy = { value: POS_MIN };
+  let entranceTL = null;
+
+  const cursorTarget = { x: -100, y: -100 };
+  const cursorRender = { x: -100, y: -100 };
+  let hoveredTitle = null;
+  const titleHover = new Array(RENDERED).fill(0);
+
+  const section = document.getElementById('experience');
+  const titleStrip = document.getElementById('titleStrip');
+  const imageStrip = document.getElementById('imageStrip');
+  const cursorRing = document.getElementById('cursorRing');
+  const titleWrap = document.querySelector('.title-wrap');
+  const imageWrap = document.querySelector('.image-wrap');
+  const detailEl = document.getElementById('detail');
+  const counterCur = document.getElementById('counterCur');
+  document.getElementById('counterTotal').textContent = String(N).padStart(2, '0');
+
+  const titleRows = [], titleH3s = [], titleDescs = [], titleIcons = [], titleGrads = [], slotEls = [], slotWraps = [], slotVids = [];
+  const TR_ICON_SVG = '<svg viewBox="0 0 10 9" fill="none" aria-hidden="true"><ellipse cx="4.62204" cy="4.5" rx="1.54733" ry="4.5" fill="currentColor"/><ellipse cx="4.64218" cy="4.55933" rx="1.5" ry="4.642" transform="rotate(90 4.64218 4.55933)" fill="currentColor"/></svg>';
+
+  function buildStrips() {
+    const tf = document.createDocumentFragment();
+    const imgf = document.createDocumentFragment();
+    for (let i = 0; i < RENDERED; i++) {
+      const cat = CATS[i % N];
+      // title row
+      const row = document.createElement('div');
+      row.className = 'tr-row';
+      const icon = document.createElement('span'); icon.className = 'tr-icon'; icon.innerHTML = TR_ICON_SVG;
+      const h3 = document.createElement('h3');
+      const base = document.createElement('span'); base.className = 'tr-text-base'; base.textContent = cat.name;
+      const textGrad = document.createElement('span'); textGrad.className = 'tr-text-grad'; textGrad.textContent = cat.name;
+      h3.appendChild(base); h3.appendChild(textGrad);
+      const desc = document.createElement('span'); desc.className = 'tr-desc'; desc.textContent = cat.descriptor;
+      row.appendChild(icon); row.appendChild(h3); row.appendChild(desc);
+      row.addEventListener('click', () => navigateAndOpen(i));
+      row.addEventListener('pointerenter', () => { hoveredTitle = i; });
+      row.addEventListener('pointerleave', () => { if (hoveredTitle === i) hoveredTitle = null; });
+      tf.appendChild(row);
+      titleRows.push(row); titleH3s.push(h3); titleDescs.push(desc); titleIcons.push(icon); titleGrads.push(textGrad);
+      // image slot
+      const wrap = document.createElement('div'); wrap.className = 'img-slot-wrap';
+      const slot = document.createElement('div'); slot.className = 'img-slot';
+      const inner = document.createElement('div'); inner.className = 'img-slot-inner';
+      const vid = document.createElement('video');
+      vid.src = cat.video; vid.muted = true; vid.loop = true;
+      vid.playsInline = true; vid.setAttribute('playsinline', '');
+      vid.disablePictureInPicture = true; vid.preload = 'metadata';
+      // No autoplay: the tick loop plays only the ~3 slots nearest the viewport
+      // (18 rendered slots would otherwise all stream + decode at once).
+      slotVids.push(vid);
+      const grad = document.createElement('div'); grad.className = 'slot-grad';
+      const ring = document.createElement('div'); ring.className = 'slot-ring';
+      inner.appendChild(vid); inner.appendChild(grad); inner.appendChild(ring);
+      slot.appendChild(inner);
+      wrap.appendChild(slot);
+      slot.addEventListener('click', () => navigateAndOpen(i));
+      slot.addEventListener('pointerenter', () => { hoveringSlot = true; ring.style.borderColor = 'rgba(201,168,76,0.5)'; });
+      slot.addEventListener('pointerleave', () => { hoveringSlot = false; ring.style.borderColor = 'rgba(201,168,76,0)'; });
+      imgf.appendChild(wrap);
+      slotEls.push(slot); slotWraps.push(wrap);
+    }
+    titleStrip.appendChild(tf);
+    imageStrip.appendChild(imgf);
+  }
+
+  function applyLayout() {
+    const L = LAYOUT;
+    for (let i = 0; i < RENDERED; i++) {
+      titleRows[i].style.height = L.titleSlotVh + 'dvh';
+    }
+    imageStrip.style.height = (RENDERED * L.imagePitchVh) + 'dvh';
+    for (let i = 0; i < RENDERED; i++) {
+      slotWraps[i].style.top = ((RENDERED - 1 - i) * L.imagePitchVh) + 'dvh';
+      slotWraps[i].style.height = L.imagePitchVh + 'dvh';
+      slotEls[i].style.height = L.imageHeightVh + 'dvh';
+    }
+  }
+
+  // ── per-frame loop ──
+  function tick() {
+    const now = performance.now();
+    if (!navigating && !detailOpen && now - lastWheelTime > SNAP_IDLE) {
+      const snapped = Math.round(targetPos);
+      if (snapped !== targetPos) targetPos = snapped;
+    }
+    let next = Math.abs(targetPos - pos) < 0.0005 ? targetPos : pos + (targetPos - pos) * SMOOTHING;
+    while (next < POS_MIN) { next += N; targetPos += N; }
+    while (next >= POS_MAX) { next -= N; targetPos -= N; }
+    pos = next;
+
+    const L = LAYOUT;
+    const vh = window.innerHeight / 100;
+
+    const titleY = (L.titleMidVh - (pos + 0.5) * L.titleSlotVh) * vh;
+    titleStrip.style.transform = `translate3d(0, ${titleY.toFixed(2)}px, 0)`;
+
+    const imageY = (L.imageWrapperMidViewportVh - L.imageWrapperTopVh - L.imagePitchVh / 2
+      - (RENDERED - 1) * L.imagePitchVh + pos * L.imagePitchVh) * vh + L.imageOffsetPx;
+    imageStrip.style.transform = `translate3d(0, ${imageY.toFixed(2)}px, 0)`;
+
+    for (let i = 0; i < RENDERED; i++) {
+      const el = slotEls[i]; const dist = Math.abs(i - pos);
+      let opacity, scale;
+      if (dist < 1) { const t = 1 - dist; opacity = 0.78 + 0.22 * t; scale = 0.93 + 0.07 * t; }
+      else if (dist < 2) { const t = 1 - (dist - 1); opacity = 0.18 + 0.60 * t; scale = 0.84 + 0.09 * t; }
+      else { opacity = 0.18; scale = 0.84; }
+      el.style.opacity = opacity.toFixed(3);
+      el.style.transform = `scale(${scale.toFixed(4)})`;
+      // Play only the slots near the viewport centre; pause the rest (and
+      // everything while the detail panel covers the reel).
+      const v = slotVids[i];
+      if (v) {
+        const shouldPlay = !detailOpen && dist < 1.75;
+        if (shouldPlay !== v.__utPlaying) {
+          v.__utPlaying = shouldPlay;
+          if (shouldPlay) v.play().catch(() => {}); else v.pause();
+        }
+      }
+    }
+
+    for (let i = 0; i < RENDERED; i++) {
+      const dist = Math.abs(i - pos);
+      const tColor = Math.max(0, 1 - dist * 2);
+      const sizeDist = Math.min(dist, 1);
+      const tType = Math.max(0, 1 - sizeDist * 0.55);
+      const h3 = titleH3s[i];
+      h3.style.color = `color-mix(in srgb, var(--white) ${(tColor * 100).toFixed(1)}%, var(--muted))`;
+      titleGrads[i].style.clipPath = `inset(${((1 - tColor) * 100).toFixed(1)}% 0 0 0)`;
+      titleRows[i].style.opacity = (0.7 + 0.3 * tColor).toFixed(3);
+      const fontVh = L.titleFontVhMin + (L.titleFontVhMax - L.titleFontVhMin) * tType;
+      h3.style.fontSize = fontVh.toFixed(2) + 'dvh';
+
+      // active-amount: drives icon reveal/rotation, title nudge and descriptor reveal in lockstep
+      const td = Math.max(0, 1 - dist * 2.8);
+      const icon = titleIcons[i];
+      const iconVh = fontVh * 0.46;
+      icon.style.height = iconVh.toFixed(2) + 'dvh';
+      icon.style.width = (td * iconVh).toFixed(2) + 'dvh';
+      icon.style.opacity = td.toFixed(3);
+      icon.style.transform = `rotate(${(-90 + 90 * td).toFixed(1)}deg)`;
+      h3.style.transform = `translateX(${(td * 0.18).toFixed(3)}em) translateY(0.05em)`;
+
+      const d = titleDescs[i];
+      d.style.opacity = td.toFixed(3);
+      d.style.clipPath = `inset(0 0 0 ${((1 - td) * 100).toFixed(1)}%)`;
+      d.style.transform = `translateX(${((1 - td) * -8).toFixed(2)}px)`;
+    }
+
+    const rounded = Math.max(0, Math.min(RENDERED - 1, Math.round(pos)));
+    if (rounded !== activeIdx) {
+      slotWraps[activeIdx].classList.remove('is-current');
+      activeIdx = rounded;
+      slotWraps[activeIdx].classList.add('is-current');
+      counterCur.textContent = String((activeIdx % N) + 1).padStart(2, '0');
+    }
+
+    // cursor ring
+    const visible = hoveringSlot && onSection && !detailOpen;
+    const lerp = visible ? CURSOR_LERP : 1;
+    cursorRender.x += (cursorTarget.x - cursorRender.x) * lerp;
+    cursorRender.y += (cursorTarget.y - cursorRender.y) * lerp;
+    cursorRing.style.transform = `translate3d(${cursorRender.x.toFixed(1)}px, ${cursorRender.y.toFixed(1)}px, 0) translate(-50%, -50%)`;
+    cursorRing.style.opacity = visible ? '1' : '0';
+
+    requestAnimationFrame(tick);
+  }
+
+  // ── input ──
+  function onWheel(e) {
+    if (!onSection || detailOpen) return;
+    if (e.target.closest && e.target.closest('[data-no-wheel]')) return;
+    e.preventDefault();
+    if (!entranceDone) skipEntrance();
+    if (navigating) { gsap.killTweensOf(navProxy); navigating = false; }
+    lastWheelTime = performance.now();
+    const d = Math.max(-WHEEL_CAP, Math.min(WHEEL_CAP, e.deltaY));
+    targetPos += d / LAYOUT.pixelsPerItem;
+  }
+  let touchY = 0;
+  function onTouchStart(e) {
+    if (detailOpen) return;
+    if (e.target.closest && e.target.closest('[data-no-wheel]')) return;
+    if (!entranceDone) skipEntrance();
+    touchY = e.touches[0] ? e.touches[0].clientY : 0;
+  }
+  function onTouchMove(e) {
+    if (detailOpen) return;
+    if (e.target.closest && e.target.closest('[data-no-wheel]')) return;
+    e.preventDefault();
+    if (!entranceDone) skipEntrance();
+    const y = e.touches[0] ? e.touches[0].clientY : touchY;
+    let d = touchY - y; touchY = y;
+    if (navigating) { gsap.killTweensOf(navProxy); navigating = false; }
+    lastWheelTime = performance.now();
+    d = Math.max(-WHEEL_CAP, Math.min(WHEEL_CAP, d));
+    targetPos += d / LAYOUT.pixelsPerItem;
+  }
+
+  section.addEventListener('pointerenter', () => { onSection = true; });
+  section.addEventListener('pointerleave', () => { onSection = false; });
+  section.addEventListener('pointermove', (e) => {
+    const r = section.getBoundingClientRect();
+    cursorTarget.x = e.clientX - r.left; cursorTarget.y = e.clientY - r.top;
+  });
+  window.addEventListener('wheel', onWheel, { passive: false });
+  section.addEventListener('touchstart', onTouchStart, { passive: true });
+  section.addEventListener('touchmove', onTouchMove, { passive: false });
+
+  // ── click-anywhere navigation ──
+  function navigateAndOpen(i) {
+    if (phase !== 'idle' || !entranceDone) return;
+    const currentIdx = activeIdx;
+    if (i === currentIdx) { openDetail(currentIdx); return; }
+    const currentLogical = ((Math.round(pos) % N) + N) % N;
+    const clickedLogical = ((i % N) + N) % N;
+    let delta = clickedLogical - currentLogical;
+    if (delta > N / 2) delta -= N;
+    if (delta < -N / 2) delta += N;
+    if (delta === 0) { openDetail(currentIdx); return; }
+    navProxy.value = pos; navigating = true;
+    gsap.killTweensOf(navProxy);
+    gsap.to(navProxy, {
+      value: pos + delta,
+      duration: 0.85 + Math.abs(delta) * 0.11,
+      ease: 'power3.inOut',
+      onUpdate: () => {
+        let v = navProxy.value;
+        while (v < POS_MIN) v += N; while (v >= POS_MAX) v -= N;
+        pos = v; targetPos = v;
+      },
+      onComplete: () => { navigating = false; requestAnimationFrame(() => openDetail(activeIdx)); }
+    });
+  }
+
+  /* ════════════════════ DETAIL + FLIP ════════════════════ */
+  let sourceImgRect = null, sourceTitleRect = null, hiddenIdx = null, currentTreatment = 0;
+  const dImageInner = { x: 0, y: 0, tx: 0, ty: 0 };
+
+  function priceVal(p) { return p.replace('XCG ', ''); }
+
+  function buildDetail(catIdx) {
+    const cat = CATS[catIdx];
+    const pills = cat.treatments.map((t, i) =>
+      `<div class="d-pill-wrap"><button class="d-pill${i === 0 ? ' is-active' : ''}" data-ti="${i}"><span class="pill-icon">${PILL_ICON_SVG}</span><span class="pill-text">${t.name}</span></button><button class="pill-info-btn" aria-label="${t.best}" data-tip="${i}" type="button">i</button><span class="pill-tooltip" role="tooltip">${t.best}</span></div>`).join('');
+    const BULLER_SVG = '<svg width="12" height="11" viewBox="0 0 10 9" fill="none" aria-hidden="true"><ellipse cx="4.62204" cy="4.5" rx="1.54733" ry="4.5" fill="currentColor"/><ellipse cx="4.64218" cy="4.55933" rx="1.5" ry="4.642" transform="rotate(90 4.64218 4.55933)" fill="currentColor"/></svg>';
+    const favs = cat.favs.map(f =>
+      `<div class="d-fav"><span class="d-fav-icon">${BULLER_SVG}</span><span class="d-fav-text">${f}</span></div>`).join('');
+    const acc = Object.keys(cat.info).map(k =>
+      `<div class="d-acc-item"><button class="d-acc-head" data-acc>${k}<span class="d-acc-plus"></span></button><div class="d-acc-body"><p>${cat.info[k]}</p></div></div>`).join('');
+    const t0 = cat.treatments[0];
+
+    detailEl.innerHTML =
+      `<div class="detail-scrim" data-detail-scrim data-detail-bg></div>
+       <div class="detail-content" data-no-wheel>
+         <span class="d-eyebrow" data-detail-reveal>${cat.descriptor}</span>
+         <h2 class="d-title" id="dTitle">${cat.name}</h2>
+         <div class="d-intro" data-detail-reveal>${cat.intro.map((p, i) => `<p>${i === 0 ? accentuate(p) : p}</p>`).join('')}</div>
+
+         <div class="d-block" data-detail-reveal>
+           <div class="d-section-label d-chooser-label"><span class="lbl-choose">Choose</span> Your Treatment</div>
+           <div class="d-chooser" id="dChooser">${pills}</div>
+         </div>
+
+         <div class="d-block" data-detail-reveal>
+           <div class="d-section-label">The Details</div>
+           <div class="d-grid-wrap">
+             <div class="d-grid">
+               <div class="d-cell"><div class="d-cell-k">Duration</div><div class="d-cell-v" id="dDur">${t0.dur}</div></div>
+               <div class="d-cell"><div class="d-cell-k">Investment</div><div class="d-cell-v" id="dInv">${priceVal(t0.price)}<span class="xcg">XCG</span></div></div>
+               <div class="d-cell"><div class="d-cell-k">Maintenance</div><div class="d-cell-v" id="dMaint">${t0.maint}</div></div>
+               <div class="d-cell"><div class="d-cell-k">Best For</div><div class="d-cell-v" id="dBest">${t0.best}</div></div>
+             </div>
+             <div class="d-cross" id="dCross"><div class="d-cross-h"></div><div class="d-cross-v"></div></div>
+           </div>
+         </div>
+
+         <div class="d-block" data-detail-reveal>
+           <div class="d-section-label">Why Clients Love It</div>
+           <div class="d-favs">${favs}</div>
+         </div>
+
+         <div class="d-block d-block--spaced" data-detail-reveal>
+           <div class="d-section-label">Client Experience</div>
+           <div class="d-quote">
+             ${cat.review.name ? '<div class="d-stars">★★★★★</div>' : ''}
+             <blockquote>“${cat.review.text}”</blockquote>
+             ${cat.review.name ? `<cite>${cat.review.name}</cite>` : ''}
+           </div>
+         </div>
+
+         <div class="d-block" data-detail-reveal>
+           <div class="d-section-label">Appointment Guide</div>
+           <div class="d-acc">${acc}</div>
+         </div>
+
+         <div class="d-booking" data-detail-reveal>
+           <h4>Your Moment Awaits</h4>
+           <p><span style="display:block">You've found the treatment that's right for you.</span><span style="display:block">Now choose a time that works for your schedule and we'll take care of the rest.</span></p>
+           <button class="btn-gold" id="dBook"><span class="btn-arrow">${ARROW}</span><span class="btn-label"><span class="word-swap"><span class="word-swap-mono">Reserve</span><span class="word-swap-cinzel">Reserve</span></span> My Appointment</span></button>
+         </div>
+
+         <div class="detail-image-frame">
+           <div class="detail-image" id="dImage">
+             <video src="${cat.video}" muted loop autoplay playsinline disablepictureinpicture preload="auto"></video>
+             <div class="slot-grad"></div>
+           </div>
+           <button class="btn-ghost" data-detail-reveal data-detail-close>
+             <span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12 7H2M6 3L2 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+             <span class="btn-label">Back to services</span>
+           </button>
+         </div>
+       </div>`;
+
+    currentTreatment = 0;
+
+    // scroll progress bar
+    const progressBar = document.getElementById('scroll-progress');
+    const dContent = detailEl.querySelector('.detail-content');
+    progressBar.style.width = '0%';
+    progressBar.classList.add('is-active');
+    dContent.addEventListener('scroll', () => {
+      const pct = dContent.scrollTop / (dContent.scrollHeight - dContent.clientHeight) * 100;
+      progressBar.style.width = Math.min(100, pct).toFixed(2) + '%';
+    }, { passive: true });
+
+    // chooser
+    detailEl.querySelectorAll('.d-pill').forEach(p => {
+      p.addEventListener('click', () => selectTreatment(catIdx, parseInt(p.dataset.ti, 10)));
+    });
+    // info tooltip tap toggle (mobile)
+    detailEl.querySelectorAll('.pill-info-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wrap = btn.closest('.d-pill-wrap');
+        const wasOpen = wrap.classList.contains('tip-open');
+        detailEl.querySelectorAll('.d-pill-wrap.tip-open').forEach(w => w.classList.remove('tip-open'));
+        if (!wasOpen) wrap.classList.add('tip-open');
+      });
+    });
+    detailEl.querySelector('.detail-content').addEventListener('click', () => {
+      detailEl.querySelectorAll('.d-pill-wrap.tip-open').forEach(w => w.classList.remove('tip-open'));
+    });
+    // accordion
+    detailEl.querySelectorAll('[data-acc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.d-acc-item');
+        const body = item.querySelector('.d-acc-body');
+        const open = item.classList.toggle('is-open');
+        body.style.maxHeight = open ? body.scrollHeight + 'px' : '0';
+      });
+    });
+    // booking
+    const dBook = detailEl.querySelector('#dBook');
+    attachBtnSwap(dBook);
+    dBook.addEventListener('click', () => openBooking(cat.name));
+    // close handlers
+    detailEl.querySelectorAll('[data-detail-close]').forEach(b => b.addEventListener('click', closeDetail));
+    detailEl.querySelector('[data-detail-bg]').addEventListener('click', closeDetail);
+    // subtle parallax on detail image (desktop)
+    if (!mq.matches) {
+      const innerImg = detailEl.querySelector('#dImage video');
+      detailEl.addEventListener('pointermove', (e) => {
+        const cx = (e.clientX / window.innerWidth - 0.5) * 2;
+        const cy = (e.clientY / window.innerHeight - 0.5) * 2;
+        dImageInner.tx = cx * 8; dImageInner.ty = cy * 8;
+        if (phase === 'detail') gsap.to(innerImg, { x: dImageInner.tx, y: dImageInner.ty, scale: 1.04, duration: 0.8, ease: 'power2.out', overwrite: 'auto' });
+      });
+    }
+  }
+
+  function selectTreatment(catIdx, ti) {
+    if (ti === currentTreatment) return;
+    currentTreatment = ti;
+    const t = CATS[catIdx].treatments[ti];
+    detailEl.querySelectorAll('.d-pill').forEach(p => p.classList.toggle('is-active', parseInt(p.dataset.ti, 10) === ti));
+    const cells = [
+      [detailEl.querySelector('#dDur'), t.dur],
+      [detailEl.querySelector('#dInv'), priceVal(t.price) + '<span class="xcg">XCG</span>'],
+      [detailEl.querySelector('#dMaint'), t.maint],
+      [detailEl.querySelector('#dBest'), t.best]
+    ];
+    // Pulse cross lines from center outward, fade out when new text is visible
+    const dCross = detailEl.querySelector('#dCross');
+    if (dCross) {
+      const h = dCross.querySelector('.d-cross-h');
+      const v = dCross.querySelector('.d-cross-v');
+      gsap.killTweensOf([h, v]);
+      gsap.set(h, { scaleX: 0, opacity: 1 });
+      gsap.set(v, { scaleY: 0, opacity: 1 });
+      gsap.to(h, { scaleX: 1, duration: 0.45, ease: 'sine.inOut' });
+      gsap.to(v, { scaleY: 1, duration: 0.45, ease: 'sine.inOut' });
+      gsap.to([h, v], { opacity: 0, duration: 0.3, ease: 'power2.in', delay: 0.6 });
+    }
+
+    cells.forEach(([el, html]) => {
+      gsap.to(el, {
+        opacity: 0, duration: 0.35, ease: 'power2.inOut',
+        onComplete: () => {
+          el.innerHTML = html;
+          gsap.fromTo(el, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+        }
+      });
+    });
+  }
+
+  function openDetail(idx) {
+    if (phase !== 'idle' || !entranceDone) return;
+    const slot = slotEls[idx], h3 = titleH3s[idx];
+    sourceImgRect = slot.getBoundingClientRect();
+    sourceTitleRect = h3.getBoundingClientRect();
+    hiddenIdx = idx;
+    slot.style.visibility = 'hidden';
+    h3.style.visibility = 'hidden';
+    phase = 'opening'; detailOpen = true;
+    document.body.style.overflow = 'hidden';
+    buildDetail(idx % N);
+    detailEl.classList.add('is-active');
+    const mb = document.getElementById('menuBtn');
+    mb.style.opacity = '0'; mb.style.pointerEvents = 'none';
+
+    requestAnimationFrame(() => runFlipOpen());
+  }
+
+  function runFlipOpen() {
+    const root = detailEl;
+    const scrim = root.querySelector('[data-detail-scrim]');
+    gsap.fromTo(scrim, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: 'power2.out' });
+
+    const imgEl = root.querySelector('#dImage');
+    if (sourceImgRect && imgEl) {
+      const t = imgEl.getBoundingClientRect();
+      const dx = sourceImgRect.left - t.left, dy = sourceImgRect.top - t.top;
+      const sx = sourceImgRect.width / t.width, sy = sourceImgRect.height / t.height;
+      gsap.set(imgEl, { visibility: 'visible', transformOrigin: 'top left', x: dx, y: dy, scaleX: sx, scaleY: sy });
+      gsap.to(imgEl, { x: 0, y: 0, scaleX: 1, scaleY: 1, duration: 0.7, ease: 'power2.out' });
+    }
+
+    const titleEl = root.querySelector('#dTitle');
+    if (sourceTitleRect && titleEl) {
+      const t = titleEl.getBoundingClientRect();
+      const dx = sourceTitleRect.left - t.left, dy = sourceTitleRect.top - t.top;
+      const s = sourceTitleRect.height / t.height;
+      gsap.set(titleEl, { visibility: 'visible', transformOrigin: 'top left', x: dx, y: dy, scale: s });
+      gsap.to(titleEl, { x: 0, y: 0, scale: 1, duration: 0.95, ease: 'power4.out', onComplete: () => { phase = 'detail'; } });
+      const lift = sourceTitleRect.top - t.top;
+      if (hiddenIdx !== null && lift !== 0) {
+        for (let i = 0; i < hiddenIdx; i++) gsap.to(titleRows[i], { y: -lift, duration: 0.95, ease: 'power4.out' });
+      }
+    } else { phase = 'detail'; }
+
+    gsap.fromTo(root.querySelectorAll('[data-detail-reveal]'),
+      { y: 24, opacity: 0, filter: 'blur(8px)' },
+      { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.9, ease: 'power4.out', stagger: 0.05, delay: 0.25 });
+
+    // ── Sequential fav entrance: icon spins in → text slides in → next row starts as line finishes ──
+    const favEls = Array.from(root.querySelectorAll('.d-fav'));
+    favEls.forEach((fav, i) => {
+      const icon = fav.querySelector('.d-fav-icon');
+      const text = fav.querySelector('.d-fav-text');
+      if (!icon || !text) return;
+      const rowDelay = 0.6 + i * 0.45;
+      gsap.fromTo(icon,
+        { rotation: -120, opacity: 0, scale: 0.4 },
+        { rotation: 0, opacity: 1, scale: 1, duration: 0.65, ease: 'back.out(1.4)', delay: rowDelay }
+      );
+      gsap.fromTo(text,
+        { opacity: 0, x: -10 },
+        { opacity: 1, x: 0, duration: 0.30, ease: 'power3.out', delay: rowDelay + 0.35 }
+      );
+    });
+  }
+
+  function closeDetail() {
+    if (phase === 'closing' || phase === 'idle') return;
+    phase = 'closing';
+    const root = detailEl;
+    const reveal = root.querySelectorAll('[data-detail-reveal]');
+    gsap.to(reveal, { y: 14, opacity: 0, filter: 'blur(6px)', duration: 0.35, ease: 'power3.in', stagger: 0.03 });
+    const scrim = root.querySelector('[data-detail-scrim]');
+    if (scrim) gsap.to(scrim, { opacity: 0, duration: 0.55, delay: 0.25, ease: 'power2.in' });
+
+    const imgEl = root.querySelector('#dImage');
+    if (sourceImgRect && imgEl) {
+      const t = imgEl.getBoundingClientRect();
+      gsap.to(imgEl, {
+        x: sourceImgRect.left - t.left, y: sourceImgRect.top - t.top,
+        scaleX: sourceImgRect.width / t.width, scaleY: sourceImgRect.height / t.height,
+        duration: 0.7, ease: 'power2.inOut', delay: 0.05
+      });
+    }
+    const titleEl = root.querySelector('#dTitle');
+    if (sourceTitleRect && titleEl) {
+      const t = titleEl.getBoundingClientRect();
+      gsap.to(titleEl, {
+        x: sourceTitleRect.left - t.left, y: sourceTitleRect.top - t.top,
+        scale: sourceTitleRect.height / t.height,
+        duration: 0.85, ease: 'power3.inOut', delay: 0.05, onComplete: finalizeClose
+      });
+      if (hiddenIdx !== null) {
+        for (let i = 0; i < hiddenIdx; i++) gsap.to(titleRows[i], { y: 0, duration: 0.85, ease: 'power3.inOut', delay: 0.05 });
+      }
+    } else { finalizeClose(); }
+  }
+
+  function finalizeClose() {
+    if (hiddenIdx !== null) {
+      const slot = slotEls[hiddenIdx], h3 = titleH3s[hiddenIdx];
+      if (slot) slot.style.visibility = '';
+      if (h3) h3.style.visibility = '';
+      for (let i = 0; i < hiddenIdx; i++) gsap.set(titleRows[i], { clearProps: 'transform' });
+    }
+    hiddenIdx = null; sourceImgRect = null; sourceTitleRect = null;
+    detailEl.classList.remove('is-active');
+    detailEl.innerHTML = '';
+    detailOpen = false; phase = 'idle';
+    const pb = document.getElementById('scroll-progress');
+    pb.style.width = '0%'; pb.classList.remove('is-active');
+    const mb2 = document.getElementById('menuBtn');
+    mb2.style.opacity = ''; mb2.style.pointerEvents = '';
+    if (!bookingOpen) document.body.style.overflow = 'hidden';
+  }
+
+  /* ════════════════════ BOOKING MODAL ════════════════════ */
+  const bookingModal = document.getElementById('bookingModal');
+  const bmFrame = document.getElementById('bmFrame');
+  const bmLoading = document.getElementById('bmLoading');
+  const bmTitle = document.getElementById('bmTitle');
+  let bookingOpen = false;
+
+  bmFrame.addEventListener('load', () => { if (bmFrame.src) bmLoading.style.opacity = '0'; });
+
+  function openBooking(catName) {
+    bookingOpen = true;
+    bmTitle.textContent = catName ? 'Book · ' + catName : 'Book Your Appointment';
+    bmLoading.style.opacity = '1';
+    bmFrame.src = BOOKING_URL;
+    bookingModal.classList.add('is-active');
+    document.body.style.overflow = 'hidden';
+    const scrim = bookingModal.querySelector('.bm-scrim');
+    const panel = bookingModal.querySelector('.bm-panel');
+    gsap.fromTo(scrim, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+    gsap.fromTo(panel, { opacity: 0, scale: 0.94, xPercent: -50, yPercent: -50 },
+      { opacity: 1, scale: 1, duration: 0.5, ease: 'power3.out' });
+  }
+  function closeBooking() {
+    if (!bookingOpen) return;
+    const scrim = bookingModal.querySelector('.bm-scrim');
+    const panel = bookingModal.querySelector('.bm-panel');
+    gsap.to(scrim, { opacity: 0, duration: 0.35, ease: 'power2.in' });
+    gsap.to(panel, {
+      opacity: 0, scale: 0.96, duration: 0.35, ease: 'power2.in',
+      onComplete: () => {
+        bookingModal.classList.remove('is-active');
+        bmFrame.src = ''; bookingOpen = false;
+        if (!detailOpen) document.body.style.overflow = 'hidden';
+      }
+    });
+  }
+  bookingModal.querySelectorAll('[data-bm-close]').forEach(b => b.addEventListener('click', closeBooking));
+
+  // global Esc precedence: booking → detail → menu
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (bookingOpen) { closeBooking(); return; }
+    if (detailOpen) { closeDetail(); return; }
+    if (window.__menuOpen && window.__menuOpen()) { window.__closeMenu(); }
+  });
+
+  /* ════════════════════ ENTRANCE ════════════════════ */
+  function runEntrance() {
+    const tl = gsap.timeline({ onComplete: () => { entranceDone = true; entranceTL = null; } });
+    entranceTL = tl;
+    tl.fromTo([titleWrap, imageWrap],
+      { opacity: 0, y: 24, scale: 1.03, filter: 'blur(12px)' },
+      { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.9, ease: 'power4.out', stagger: 0.06 }, 0);
+    tl.fromTo(document.querySelectorAll('[data-chrome]'),
+      { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', stagger: 0.05 }, 0.5);
+    const ep = { value: POS_MIN };
+    const cycle = Math.floor(1.4 * N) + Math.floor(Math.random() * N);
+    tl.to(ep, {
+      value: POS_MIN + cycle, duration: 1.7, ease: 'power4.out',
+      onUpdate: () => {
+        let v = ep.value; while (v < POS_MIN) v += N; while (v >= POS_MAX) v -= N;
+        pos = v; targetPos = v;
+      }
+    }, 0);
+  }
+  function skipEntrance() {
+    if (entranceDone) return;
+    if (entranceTL) { entranceTL.kill(); entranceTL = null; }
+    gsap.set([titleWrap, imageWrap], { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' });
+    gsap.set(document.querySelectorAll('[data-chrome]'), { opacity: 1, y: 0 });
+    entranceDone = true;
+  }
+
+  /* ════════════════════ INIT ════════════════════ */
+  buildStrips();
+  applyLayout();
+  mq.addEventListener('change', () => { LAYOUT = mq.matches ? MOBILE : DESKTOP; applyLayout(); });
+  requestAnimationFrame(tick);
+
+  // Deep link: ?service=<slug> jumps straight to that service's opened detail state
+  const requestedSlug = new URLSearchParams(location.search).get('service');
+  const requestedIdx = requestedSlug ? CATS.findIndex(c => c.slug === requestedSlug) : -1;
+
+  if (requestedIdx !== -1) {
+    pos = targetPos = activeIdx = POS_MIN + requestedIdx;
+    counterCur.textContent = String(requestedIdx + 1).padStart(2, '0');
+    skipEntrance();
+    requestAnimationFrame(() => requestAnimationFrame(() => openDetail(activeIdx)));
+  } else {
+    runEntrance();
+  }
+  slotWraps[activeIdx].classList.add('is-current');
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Dependencies (restore with: npm install)
+node_modules/
+
+# Local artifacts — never ship
+temporary screenshots/
+_originals_backup/
+*.log

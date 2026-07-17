@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — Unique Touch Beauty Salon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <script>
+    (function(){
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+      document.documentElement.classList.add('pt-hide');
+      setTimeout(function(){ document.documentElement.classList.remove('pt-hide'); }, 1500);
+    })();
+  </script>
+  <style>html.pt-hide body{opacity:0}</style>
+  <script src="page-transitions.js"></script>
+  <style>
+    :root {
+      --bg:          #0A0906;
+      --bg-card:     #161310;
+      --gold:        #C9A84C;
+      --gold-light:  #E0C46A;
+      --gold-dim:    rgba(201,168,76,0.12);
+      --cream:       #F4EDD6;
+      --white:       #FFFFFF;
+      --muted:       rgba(255,255,255,0.52);
+      --dim:         rgba(255,255,255,0.28);
+
+      /* ── responsive spacing scale (fluid, shrinks on small screens) ── */
+      --gutter:      clamp(16px, 5vw, 24px);
+      --gutter-y:    clamp(12px, 3.5vw, 16px);
+      --space-1:     clamp(0.375rem, 1.2vw, 0.5rem);
+      --space-2:     clamp(0.625rem, 2vw, 0.875rem);
+      --space-3:     clamp(0.875rem, 2.6vw, 1.25rem);
+      --space-4:     clamp(1.25rem, 4vw, 2rem);
+      --space-5:     clamp(1.75rem, 5vw, 2.75rem);
+      --space-6:     clamp(2.25rem, 6vw, 3.25rem);
+      --card-radius: clamp(10px, 2.5vw, 16px);
+      --fab-inset-x: clamp(14px, 4.2vw, calc(24px + 1.75rem));
+      --fab-inset-y: clamp(14px, 4.2vw, calc(36px + 0.875rem));
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Keyboard focus — visible on every interactive element, invisible to mouse users */
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    /* Fluid root: rem scales down proportionally on small screens, 16px at ~1440px. */
+    html { scroll-behavior: smooth; background: var(--bg); font-size: clamp(14px, 13.33px + 0.185vw, 16px); }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      overflow-x: clip;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── FLOATING NAV BUTTONS (GSAP-owned fixed elements) ──── */
+    #menuBtn {
+      position: fixed;
+      top: calc(36px + 0.875rem);
+      left: calc(24px + 1.75rem);
+      z-index: 201;
+      will-change: transform;
+    }
+    #bookBtn {
+      position: fixed;
+      top: calc(36px + 0.875rem);
+      right: calc(24px + 1.75rem);
+      z-index: 201;
+      will-change: transform;
+    }
+    /* Recede along with the rest of the page while the menu overlay is open */
+    .menu-backdrop.is-open ~ #bookBtn {
+      filter: blur(4px);
+      /* !important: GSAP's scroll-driven nav-visibility fade (setNavVisibility) sets an
+         inline opacity on this element, which otherwise always wins over a stylesheet
+         rule regardless of selector specificity */
+      opacity: 0.35 !important;
+      pointer-events: none;
+      /* Drop behind .menu-backdrop (198) and .menu-panel (199) so it recedes into the
+         dimmed background instead of shining through on top of the panel's text
+         wherever the fully-open panel overlaps its position (routine in the footer). */
+      z-index: 150;
+      transition: filter 0.3s ease, opacity 0.3s ease;
+    }
+
+    /* ── MENU BUTTON ─────────────────────────── */
+    .menu-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: none; border: none; cursor: pointer; padding: 0; z-index: 201;
+    }
+    .menu-btn-icon {
+      width: 14px; height: 14px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .menu-btn:hover .menu-btn-icon,
+    .menu-btn.is-open .menu-btn-icon { transform: rotate(180deg); }
+    .menu-btn-label {
+      font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 500;
+      letter-spacing: 0.08em; color: var(--white);
+      transition: color 0.2s ease; position: relative;
+      width: 2.8em; height: 1em; line-height: 1em;
+    }
+    .menu-btn:hover .menu-btn-label,
+    .menu-btn.is-open .menu-btn-label { color: var(--gold); }
+    .menu-btn-label .lbl-menu,
+    .menu-btn-label .lbl-close {
+      display: block; position: absolute; top: 0; left: 0; white-space: nowrap;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .menu-btn-label .lbl-close { opacity: 0; transform: translateY(4px); }
+    .menu-btn.is-open .menu-btn-label .lbl-menu { opacity: 0; transform: translateY(-4px); }
+    .menu-btn.is-open .menu-btn-label .lbl-close { opacity: 1; transform: translateY(0); }
+
+    /* ── MENU BACKDROP ───────────────────────── */
+    .menu-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0);
+      z-index: 198; pointer-events: none;
+      transition: background 0.4s ease;
+    }
+    .menu-backdrop.is-open { background: rgba(0,0,0,0.6); pointer-events: auto; }
+
+    /* ── MENU PANEL (glass-card) ─────────────── */
+    .menu-panel {
+      position: fixed; top: 36px; left: 24px; z-index: 199;
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(180,180,180,0.08) 100%);
+      backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+      border-radius: 20px;
+      border: 1px solid rgba(201,168,76,0.75);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      overflow: hidden;
+      width: 0; height: 0; min-width: 0;
+      pointer-events: none; border-color: transparent;
+    }
+    .menu-panel.is-open { pointer-events: auto; border-color: rgba(201,168,76,0.75); }
+    .menu-panel-inner {
+      opacity: 0; padding: 24px 36px;
+      transition: opacity 0.2s ease;
+      width: 100%; height: 100%;
+      /* overflow stays hidden while the panel's own height is mid-transition (its
+         content's natural size briefly exceeds the still-animating container, which
+         would otherwise flash a scrollbar) — .height-settled below turns it on only
+         once the panel has finished expanding, and only if content still doesn't fit. */
+      overflow-y: hidden;
+      box-sizing: border-box;
+      display: flex; flex-direction: column;
+    }
+    .menu-panel.links-visible .menu-panel-inner { opacity: 1; }
+    .menu-panel.height-settled .menu-panel-inner { overflow-y: auto; }
+    .menu-nav-links {
+      list-style: none; display: flex; flex-direction: column; gap: 12px;
+    }
+    .menu-nav-links li {
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(1) { opacity: 1; transform: none; transition-delay: 0.05s; }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.1s; }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.15s; }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.2s; }
+    .menu-panel.links-visible .menu-nav-links li:nth-child(5) { opacity: 1; transform: none; transition-delay: 0.25s; }
+    .menu-nav-links a {
+      font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 400;
+      letter-spacing: 0.04em; color: var(--white); text-decoration: none;
+      display: flex; align-items: center; gap: 0; overflow: hidden; padding: 0;
+      transition: color 0.25s ease;
+    }
+    .menu-nav-links a:hover,
+    .menu-nav-links a.is-current { color: var(--gold); }
+    .menu-nav-links a .menu-link-arrow {
+      display: inline-flex; width: 0; overflow: hidden; opacity: 0;
+      transition: width 0.3s cubic-bezier(0.65,0,0.35,1), opacity 0.3s ease;
+      flex-shrink: 0; align-items: center;
+    }
+    .menu-nav-links a:hover .menu-link-arrow,
+    .menu-nav-links a.is-current .menu-link-arrow { width: 1.5rem; opacity: 1; }
+    .menu-nav-links a .menu-link-text {
+      transition: transform 0.3s cubic-bezier(0.65,0,0.35,1);
+    }
+    .menu-nav-links a:hover .menu-link-text,
+    .menu-nav-links a.is-current .menu-link-text { transform: translateX(0.35rem); }
+    .menu-divider {
+      height: 1px; background: rgba(255,255,255,0.20); margin-top: 32px;
+    }
+    .menu-socials {
+      display: flex; flex-direction: row; justify-content: flex-end;
+      align-items: center; gap: 16px; margin-top: 16px;
+    }
+    .menu-social-link {
+      color: var(--white); text-decoration: none;
+      display: flex; align-items: center;
+      transition: color 0.25s ease;
+    }
+    .menu-social-link:hover { color: var(--gold); }
+
+    /* ── BTN-GOLD (primary) ─────────────────── */
+    .btn-gold {
+      position: relative; display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Montserrat', sans-serif; font-size: 0.875rem; font-weight: 500;
+      letter-spacing: 0; text-transform: capitalize;
+      color: var(--bg); background: var(--gold);
+      height: 2.25rem; padding: 0 12px; border-radius: 100px;
+      text-decoration: none; overflow: hidden; isolation: isolate; min-width: 0;
+    }
+    .btn-gold::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--gold-light);
+      clip-path: inset(0 100% 0 0);
+      border-radius: inherit;
+      transition: clip-path 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+      z-index: 0;
+    }
+    .btn-gold:hover::before { clip-path: inset(0 0% 0 0); }
+    .btn-gold .btn-arrow {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; flex-shrink: 0;
+      transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    .btn-gold .btn-label {
+      position: relative; z-index: 1;
+      transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* ── BTN-GHOST (secondary) ─────────────── */
+    .btn-ghost {
+      position: relative; display: inline-flex; align-items: center; gap: 6px;
+      cursor: pointer; outline: none; border: 0; text-decoration: none;
+      background: transparent; padding: 0 12px 0 0;
+      font-family: 'Montserrat', sans-serif; white-space: nowrap;
+      flex-shrink: 0; height: 2.25rem;
+    }
+    .btn-ghost::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 38px; background: transparent;
+      border: 1px solid var(--gold); border-radius: 100px;
+      transition: width 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+      z-index: 0;
+    }
+    .btn-ghost:hover::before { width: 100%; }
+    .btn-ghost .btn-arrow {
+      position: relative; z-index: 1;
+      width: 38px; height: 2.25rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--white);
+    }
+    .btn-ghost .btn-label {
+      position: relative; z-index: 1; padding: 0;
+      font-family: 'Montserrat', sans-serif; font-size: 0.875rem;
+      font-weight: 500; letter-spacing: 0; text-transform: capitalize;
+      color: var(--white); transform: translateX(8px);
+      transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    .btn-ghost:hover .btn-label { transform: translateX(0); }
+
+    .word-swap { display: inline-grid; vertical-align: bottom; }
+    .word-swap-mono, .word-swap-cinzel { grid-area: 1 / 1; }
+    .word-swap-mono { transition: opacity 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
+    .word-swap-cinzel {
+      font-family: 'Cinzel', serif; font-weight: 400; font-style: italic;
+      font-size: inherit; white-space: nowrap; opacity: 0;
+      transition: opacity 0.35s cubic-bezier(0.33, 1, 0.68, 1); pointer-events: none;
+    }
+    .btn-gold:hover .word-swap-mono, .btn-ghost:hover .word-swap-mono { opacity: 0; }
+    .btn-gold:hover .word-swap-cinzel, .btn-ghost:hover .word-swap-cinzel { opacity: 1; }
+
+    /* ── Gradient angle property + keyframe (used by card borders & lightbox) ── */
+    @property --gradient-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @keyframes gradient-rotate {
+      to { --gradient-angle: 360deg; }
+    }
+
+    /* ═══════════════ GALLERY INTRO (title band) ═══════════════ */
+    #gallery-intro {
+      background: #000000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: center;
+      padding-top: 116px;
+      padding-bottom: 48px;
+      overflow: hidden;
+    }
+    .gi-page-title {
+      font-family: 'Cinzel', serif;
+      font-size: 48px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      background: linear-gradient(180deg, #ffffff 0%, #d4b96a 42%, #6b4e1a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.5rem;
+      line-height: 1;
+    }
+    .gi-header {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--white);
+      white-space: nowrap;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .gi-header .gi-w-medium {
+      font-weight: 500;
+    }
+    .gi-accent-word {
+      position: relative;
+      display: inline-block;
+    }
+    .gi-accent-svg {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -44%);
+      width: 130%;
+      height: auto;
+      opacity: 0.85;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .gi-accent-text {
+      position: relative;
+      z-index: 1;
+    }
+    .gi-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-size: clamp(0.7rem, 1.5vw, 1rem);
+      font-weight: 300;
+      color: var(--white);
+      white-space: nowrap;
+      line-height: 1.6;
+    }
+    .gi-sub .gi-w-medium {
+      font-weight: 500;
+    }
+
+    /* ═══════════════ RADIAL GALLERY ═══════════════ */
+    #radial-gallery {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* The wheel's 3/9-o'clock cards extend past the viewport edge; clip the
+         x-axis only (clip ≠ hidden: no scroll container, no vertical cropping)
+         so the arc can't stretch the layout viewport on tablets. */
+      overflow-x: clip;
+      overflow-y: visible;
+      background: #000000;
+      mask-image: linear-gradient(to top, transparent 0px, black 280px);
+      -webkit-mask-image: linear-gradient(to top, transparent 0px, black 280px);
+    }
+    .rsg-mask {
+      position: relative;
+      width: 100%;
+      overflow: visible;
+    }
+    /* Negative-space statement — desktop hides it (the arc fills the frame);
+       it is enabled + positioned in the mobile media query below. */
+    .rsg-caption { display: none; }
+    .rsg-wheel {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      will-change: transform;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+    }
+    .rsg-wheel.is-mounted { opacity: 1; }
+
+    .rsg-item {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 10;
+    }
+    .rsg-item.is-hover { z-index: 100; }
+
+    .rsg-card {
+      position: relative;
+      display: block;
+      width: var(--rsg-card-w, 260px);
+      aspect-ratio: 3 / 4;
+      border-radius: 18px;
+      overflow: visible;
+      cursor: pointer;
+      outline: none;
+      transition: transform 0.55s cubic-bezier(0.22, 0.8, 0.32, 1),
+                  filter 0.55s cubic-bezier(0.22, 0.8, 0.32, 1),
+                  opacity 0.55s cubic-bezier(0.22, 0.8, 0.32, 1);
+      will-change: transform, filter, opacity;
+    }
+    .rsg-card:focus-visible {
+      box-shadow: 0 0 0 2px var(--gold), 0 0 0 5px rgba(201,168,76,0.25);
+      border-radius: 20px;
+    }
+    /* Resting border — subtle gold hairline */
+    .rsg-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      border: 1px solid rgba(201,168,76,0.35);
+      pointer-events: none;
+      z-index: 3;
+      transition: opacity 0.4s ease;
+    }
+    /* Animated rotating gradient border — reveals on hover */
+    .rsg-card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 20px;
+      background: conic-gradient(
+        from var(--gradient-angle),
+        #584827 0%,
+        #c7a03c 37%,
+        #f9de90 50%,
+        #c7a03c 63%,
+        #584827 75%,
+        #c7a03c 87%,
+        #f9de90 100%
+      );
+      animation: gradient-rotate 10s linear infinite;
+      opacity: 0;
+      transition: opacity 0.5s cubic-bezier(0.22, 0.8, 0.32, 1);
+      z-index: 0;
+    }
+    .rsg-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--bg-card);
+      z-index: 1;
+    }
+    .rsg-card video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* Color treatment + bottom gradient overlay on video */
+    .rsg-card-inner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(10,9,6,0.85) 0%, rgba(10,9,6,0.35) 38%, rgba(10,9,6,0.0) 62%);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .rsg-card-meta {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
+    }
+    .rsg-card-index { display: none; }
+    .rsg-card-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 300;
+      font-variant: small-caps;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+      color: var(--white);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22,0.8,0.32,1);
+    }
+    .rsg-card-desc {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--white);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.3s ease 0.05s, transform 0.3s cubic-bezier(0.22,0.8,0.32,1) 0.05s;
+    }
+    /* Play affordance on hover — small gold circle, top-right */
+    .rsg-card-play {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(201,168,76,0.92);
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    /* Hover state — driven by JS .is-hover */
+    .rsg-item.is-hover .rsg-card {
+      transform: scale(1.18) translateY(-2rem);
+    }
+    .rsg-item.is-hover .rsg-card::before { opacity: 1; }
+    .rsg-item.is-hover .rsg-card::after  { opacity: 0; }
+    .rsg-item.is-hover .rsg-card-play {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .rsg-item.is-hover .rsg-card-title,
+    .rsg-item.is-hover .rsg-card-desc {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* When any sibling is hovered, dim the rest */
+    .rsg-wheel.has-hover .rsg-item:not(.is-hover) .rsg-card {
+      filter: blur(2px) grayscale(0.8);
+      opacity: 0.4;
+    }
+
+    /* ═══════════════ LIGHTBOX ═══════════════ */
+    .lb-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 7, 5, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s cubic-bezier(0.22, 0.8, 0.32, 1);
+      padding: 4rem 2rem;
+    }
+    .lb-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .lb-frame {
+      position: relative;
+      width: min(1100px, 92vw);
+      aspect-ratio: 16 / 9;
+      border-radius: 18px;
+      overflow: visible;
+      transform: scale(0.92);
+      transition: transform 0.55s cubic-bezier(0.22, 0.8, 0.32, 1);
+    }
+    .lb-overlay.is-open .lb-frame { transform: scale(1); }
+    .lb-frame::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 20px;
+      background: conic-gradient(
+        from var(--gradient-angle),
+        #584827 0%,
+        #c7a03c 37%,
+        #f9de90 50%,
+        #c7a03c 63%,
+        #584827 75%,
+        #c7a03c 87%,
+        #f9de90 100%
+      );
+      animation: gradient-rotate 10s linear infinite;
+      z-index: 0;
+    }
+    .lb-frame-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      z-index: 1;
+    }
+    .lb-frame-inner video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #000;
+    }
+    .lb-caption {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -5.5rem;
+      text-align: center;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .lb-caption-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 300;
+      font-variant: small-caps;
+      letter-spacing: 0.08em;
+      color: var(--white);
+      margin-bottom: 0.35rem;
+    }
+    .lb-caption-desc {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--white);
+      max-width: 50ch;
+      margin: 0 auto;
+      line-height: 1.55;
+    }
+    .lb-close {
+      position: absolute;
+      top: -52px;
+      right: -2px;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--bg);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      isolation: isolate;
+      z-index: 4;
+      transition: transform 0.4s cubic-bezier(0.22,0.8,0.32,1);
+    }
+    .lb-close::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--gold-light);
+      clip-path: inset(0 100% 0 0);
+      border-radius: inherit;
+      transition: clip-path 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+      z-index: 0;
+    }
+    .lb-close:hover::before { clip-path: inset(0 0% 0 0); }
+    .lb-close:hover { transform: rotate(90deg); }
+    .lb-close svg { position: relative; z-index: 1; }
+
+    body.lb-open { overflow: hidden; }
+
+    /* ═══════════════ FOOTER ═══════════════ */
+    footer {
+      position: relative;
+      z-index: 2;
+      box-sizing: border-box;
+      height: calc(100vh - 48px);
+      padding: 1rem 2.75rem 2.5rem;
+      overflow: hidden;
+      margin: calc(-6vh + 2.88px) 24px 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(212, 175, 55, 0.5);
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+    }
+    .footer-bg {
+      position: absolute; inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .footer-bg-video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transform: scale(1.02);
+      filter: contrast(1.05) brightness(1.0) saturate(1.05);
+    }
+    /* vignette only — no bottom gradient */
+    .footer-bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 120% 100% at 50% 0%,   transparent 40%, rgba(10,9,6,0.22) 100%),
+        radial-gradient(ellipse 80% 80% at 0% 50%,     rgba(10,9,6,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 80% at 100% 50%,   rgba(10,9,6,0.10) 0%, transparent 60%);
+    }
+    /* gold color grading layer */
+    .footer-bg-tint {
+      position: absolute; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse 90% 70% at 60% 30%, rgba(201,168,76,0.07) 0%, transparent 65%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+    /* grain texture */
+    .footer-bg-grain {
+      position: absolute; inset: 0; z-index: 2;
+      opacity: 0.028;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+      background-repeat: repeat;
+    }
+    .footer-inner {
+      position: relative; z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    /* ── Split header: UNIQUE left · TOUCH right ── */
+    .footer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .footer-title-left,
+    .footer-title-right-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .footer-title-right-group {
+      align-items: flex-end;
+      justify-content: flex-start;
+    }
+    .footer-title-right-group .footer-title-word {
+      padding-bottom: 0;
+    }
+    .footer-title-word {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(5rem, 10.278vw, 148px);
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      line-height: 0.9;
+      color: #ffffff;
+      padding-bottom: 0.12em;
+      margin: 0;
+      /* slide-in initial state */
+      opacity: 0;
+      transform: translateX(0);
+    }
+    .footer-title-word.from-left  { transform: translateX(-80px); }
+    .footer-title-word.from-right { transform: translateX(80px); }
+    .footer-title-word.revealed {
+      opacity: 1;
+      transform: translateX(0);
+      transition: opacity 0.9s cubic-bezier(0.22,0.8,0.32,1),
+                  transform 0.9s cubic-bezier(0.22,0.8,0.32,1);
+    }
+    .footer-title-word.from-right.revealed {
+      transition-delay: 0.08s;
+    }
+    .footer-beauty-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 34px;
+      font-weight: 400;
+      line-height: 1.2;
+      color: rgba(255,255,255,0.88);
+      letter-spacing: 0.04em;
+      margin-top: 24px;
+    }
+    .footer-head-sub {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 18px;
+    }
+    .footer-location {
+      font-size: 0.8125rem;
+      color: var(--white);
+      line-height: 1.6;
+    }
+    .footer-location em { font-style: italic; }
+    .footer-top-right { text-align: right; margin-left: auto; }
+    .footer-brand-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--white);
+    }
+    .footer-address {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    /* ── Spacer pushes nav to bottom ── */
+    .footer-spacer { flex: 1; }
+    /* ── Nav pinned to bottom ── */
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    #footerMenuAnchor {
+      height: 2.25rem;
+      align-self: flex-end;
+      flex-shrink: 0;
+    }
+    #footerBookAnchor {
+      margin-top: 1rem;
+      height: 2.25rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .footer-contact-col { text-align: right; }
+    .footer-col-label {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.70);
+      margin-bottom: 12px;
+    }
+    .footer-contact { display: flex; flex-direction: column; gap: 6px; }
+    .footer-contact span { font-size: 20px; font-weight: 500; color: var(--white); }
+    .footer-contact span:last-child { font-size: 20px; }
+
+    /* ═══════════════ MOBILE / RESPONSIVE ═══════════════ */
+    @media (max-width: 767px) {
+      #menuBtn { top: 22px; left: 22px; }
+      #bookBtn { top: 22px; right: 22px; }
+      #gallery-intro {
+        min-height: calc(100vh - 320px);
+        min-height: calc(100svh - 320px);
+        justify-content: center;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      #radial-gallery {
+        align-items: flex-start;
+        /* Drop the desktop bottom fade on mobile: the arc is already clipped by
+           .rsg-mask, so this fade would only dim the caption sitting below it. */
+        -webkit-mask-image: none;
+        mask-image: none;
+      }
+      /* Hard-clip the ring's lower half so the upside-down bottom cards never
+         show (desktop hides them below the fold instead — see measure()). The
+         gradient mask softens the clip edge so the outer arc cards fade out
+         rather than cutting on a hard line. */
+      .rsg-mask {
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(to top, transparent 0, #000 90px);
+        mask-image: linear-gradient(to top, transparent 0, #000 90px);
+        /* Settles the arc down to a centred position once the section locks
+           (see .rsg-pinned). Kept off the natural-flow state so the first-screen
+           card peek is unaffected. */
+        transition: transform 0.7s cubic-bezier(0.22, 0.8, 0.32, 1);
+      }
+      /* Toggled by the pin ScrollTrigger while the section is locked — glides the
+         arc down from the top edge to a centred resting spot, opening the
+         negative space below for the caption. */
+      #radial-gallery.rsg-pinned .rsg-mask { transform: translateY(16vh); }
+
+      /* Statement centred in the negative space below the arc. */
+      .rsg-caption {
+        display: block;
+        position: absolute;
+        left: 50%;
+        top: 76%;
+        transform: translate(-50%, -50%);
+        width: min(80vw, 340px);
+        margin: 0;
+        text-align: center;
+        font-family: 'Montserrat', sans-serif;
+        font-style: italic;
+        font-weight: 400;
+        font-size: 1.375rem;
+        line-height: 1.45;
+        letter-spacing: 0.01em;
+        color: var(--cream);
+        opacity: 0;                 /* JS fades it in after the cards lock */
+        visibility: hidden;
+        z-index: 5;
+        pointer-events: none;
+        text-wrap: balance;
+      }
+      .scroll-hint { padding-top: 32px; }
+      .gi-page-title { font-size: 2rem; }
+      .gi-header { white-space: normal; font-size: 1.5rem; }
+      .gi-sub { white-space: normal; padding: 0 var(--gutter); font-size: 0.9375rem; line-height: 1.65; }
+      /* .rsg-card width is JS-driven via --rsg-card-w (see measure/positionItems) */
+      .rsg-card-title { font-size: 0.875rem; }
+      .rsg-card-desc  { font-size: 0.6875rem; }
+      .rsg-card-index { font-size: 0.5625rem; }
+      .rsg-card-play  { width: 28px; height: 28px; top: 8px; right: 8px; }
+      .lb-overlay { padding: 5rem 1rem 6rem; }
+      .lb-close { top: -48px; right: 0; }
+      .lb-caption { top: -5rem; right: 0; }
+      .lb-caption-title { font-size: 1.125rem; }
+      .lb-caption-desc { font-size: 0.75rem; padding: 0 1rem; }
+      /* Footer: grow to content, reflow head + bottom to columns */
+      footer {
+        height: auto;
+        min-height: calc(100svh - 2 * var(--gutter));
+        margin: calc(-6vh + 2.88px) var(--gutter) var(--gutter);
+        padding: 1.5rem var(--gutter) 2rem;
+        /* flex column so .footer-inner can grow to the card's full min-height
+           (an auto-height parent can't resolve the inner's height:100%). */
+        display: flex;
+        flex-direction: column;
+      }
+      /* Centered layout: header group floats in the vertical middle,
+         contact block recedes to the very bottom, menu docks below it. */
+      .footer-inner { flex: 1; text-align: center; align-items: center; }
+      /* margin-top:auto on .footer-head absorbs ~all leftover space (the
+         fixed 6vh below on .footer-head-sub is no longer flexible), pushing
+         the block noticeably lower — most empty space collects above it. */
+      .footer-head { margin-top: auto; flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
+      /* display:contents flattens this group so Beauty Salon / TOUCH become
+         direct flex children of .footer-head, reorderable like the hero. */
+      .footer-title-right-group { display: contents; }
+      .footer-beauty-tag { order: 1; margin-bottom: 8px; font-size: 1.15rem; }
+      .footer-title-left { order: 2; }
+      .footer-title-right-group .footer-title-word { order: 3; }
+      /* Curaçao tagline removed on mobile — keeps the header block clean. */
+      .footer-location { display: none; }
+      .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; margin-bottom: 6vh; }
+      .footer-spacer { display: none; }
+      .footer-top-right { text-align: center; margin-left: 0; }
+      /* Dock centering: the scroll-dock lands the Book button at its anchor's
+         (right edge − button width). Matching the anchor width to the button
+         width (154px pill here, 40px FAB at ≤480) centers it. */
+      #footerBookAnchor { justify-content: center; width: 154px; margin: 0 auto; }
+      /* column-reverse: Contact Us (2nd in source) sits above the menu anchor
+         (1st in source) → contact pinned bottom, menu docks just below it. */
+      .footer-bottom { flex-direction: column-reverse; align-items: center; gap: 1rem; }
+      /* Menu docks at its anchor's left edge; anchor width = menu button width
+         (54px) so the centered anchor centers the button. */
+      #footerMenuAnchor { align-self: center; width: 54px; margin: 0 auto; }
+      .footer-contact-col { text-align: center; }
+      /* Shrink contact so it doesn't compete with the header. */
+      .footer-col-label { font-size: 11px; margin-bottom: 8px; }
+      .footer-contact { gap: 4px; }
+      .footer-contact span,
+      .footer-contact span:last-child { font-size: 13px; }
+      #bookBtn { padding: 10px 20px; }
+    }
+
+    /* ── small phone (≤480) ── */
+    @media (max-width: 480px) {
+      .gi-header { font-size: 1.3rem; }
+      /* Book FAB collapses to an arrow-only circle so it never crowds Menu */
+      #bookBtn { width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 50%; }
+      #bookBtn .btn-label { display: none; }
+      #bookBtn .btn-arrow { position: static; left: auto; transform: none; }
+      #bookBtn:hover .btn-arrow { left: auto; }
+      /* Match the footer Book anchor to the collapsed FAB width so the docked
+         button stays centered (see the 767px rule for the pill width). */
+      #footerBookAnchor { width: 2.5rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rsg-card::before { animation: none; }
+      .lb-frame::before { animation: none; }
+    }
+
+    /* ── Scroll hint ── */
+    .scroll-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 96px 0 0;
+      width: 100%;
+    }
+    .scroll-hint-text {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.625rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 0%, #d4b96a 42%, #6b4e1a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .scroll-hint-track {
+      position: relative;
+      width: 1px;
+      height: 64px;
+      background: linear-gradient(to bottom, #C9A84C, rgba(10,9,6,0.2));
+      overflow: hidden;
+    }
+    .scroll-hint-drip {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, #E0C46A, #C9A84C, rgba(10,9,6,0));
+      animation: scroll-lava 2s linear infinite;
+    }
+    @keyframes scroll-lava {
+      from { transform: translateY(-100%); }
+      to   { transform: translateY(100%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .scroll-hint-drip { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ MENU BACKDROP ══════════ -->
+<div class="menu-backdrop" id="menuBackdrop"></div>
+
+<!-- ═══════════ MENU PANEL ══════════════ -->
+<div class="menu-panel" id="menuPanel" role="dialog" aria-label="Site navigation">
+  <div class="menu-panel-inner">
+
+    <ul class="menu-nav-links">
+      <li>
+        <a href="index.html">
+          <span class="menu-link-arrow"><svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="menu-link-text">Home</span>
+        </a>
+      </li>
+      <li>
+        <a href="service-experience.html">
+          <span class="menu-link-arrow"><svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="menu-link-text">Service</span>
+        </a>
+      </li>
+      <li>
+        <a href="index.html#courses">
+          <span class="menu-link-arrow"><svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="menu-link-text">Courses</span>
+        </a>
+      </li>
+      <li>
+        <a href="gallery.html" class="is-current" aria-current="page">
+          <span class="menu-link-arrow"><svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="menu-link-text">Gallery</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="menu-divider"></div>
+
+    <div class="menu-socials">
+      <a href="https://www.facebook.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </a>
+      <a href="https://www.instagram.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </a>
+      <a href="https://www.tiktok.com/@uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z"/></svg>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ FLOATING NAV BUTTONS ══════════════ -->
+<button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="menuPanel">
+  <span class="menu-btn-icon">
+    <img src="brand_assets/buller-list.svg" width="14" height="14" alt="" aria-hidden="true">
+  </span>
+  <span class="menu-btn-label">
+    <span class="lbl-menu">Menu</span>
+    <span class="lbl-close">Close</span>
+  </span>
+</button>
+<a href="service-experience.html" class="btn-gold" id="bookBtn"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Find Your <span class="word-swap"><span class="word-swap-mono">Treatment</span><span class="word-swap-cinzel">Treatment</span></span></span></a>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main>
+
+  <!-- Title band -->
+  <section id="gallery-intro">
+    <span class="gi-page-title" data-pt>Gallery</span>
+    <h1 class="gi-header" data-pt><span class="gi-w-medium">Discover</span> The <span class="gi-accent-word"><img src="brand_assets/header-accent.svg" class="gi-accent-svg" width="122" height="83" aria-hidden="true" alt=""><span class="gi-accent-text gi-w-medium">Experience</span></span></h1>
+    <p class="gi-sub" data-pt>A collection of <span class="gi-w-medium">real</span> sessions, <span class="gi-w-medium">genuine</span> emotions, and moments worth <span class="gi-w-medium">remembering</span>.</p>
+    <!-- Scroll hint -->
+    <div class="scroll-hint" aria-hidden="true">
+      <span class="scroll-hint-text">Scroll to explore</span>
+      <div class="scroll-hint-track">
+        <div class="scroll-hint-drip"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Radial scroll gallery -->
+  <section id="radial-gallery" aria-label="Gallery showcase">
+    <div class="rsg-mask" id="rsgMask">
+      <ul class="rsg-wheel" id="rsgWheel"></ul>
+    </div>
+    <!-- Statement in the negative space below the arc (mobile only). Fades in
+         once the cards lock, then stays put ("sticky") while the section is
+         pinned — driven by the pin ScrollTrigger in registerScroll(). -->
+    <p class="rsg-caption" id="rsgCaption" aria-hidden="true">Collection of memories worth&nbsp;sharing</p>
+  </section>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <div class="footer-bg">
+    <video class="footer-bg-video" autoplay muted loop playsinline>
+      <source src="brand_assets/footbg.mp4" type="video/mp4">
+    </video>
+    <div class="footer-bg-tint"></div>
+    <div class="footer-bg-grain"></div>
+  </div>
+  <div class="footer-inner">
+    <div class="footer-head" id="footerHead">
+      <div class="footer-title-left">
+        <span class="footer-title-word from-left" id="footerWordUnique">UNIQUE</span>
+      </div>
+      <div class="footer-title-right-group">
+        <span class="footer-title-word from-right" id="footerWordTouch">TOUCH</span>
+        <div class="footer-beauty-tag">Beauty Salon</div>
+      </div>
+    </div>
+    <div class="footer-head-sub">
+      <div class="footer-top-right">
+        <p class="footer-location">Beauty Salon in the beautiful island of <em>Curaçao</em></p>
+
+        <div id="footerBookAnchor"></div>
+      </div>
+    </div>
+    <div class="footer-spacer"></div>
+    <div class="footer-bottom">
+      <div id="footerMenuAnchor"></div>
+      <div class="footer-contact-col">
+        <p class="footer-col-label">Contact Us</p>
+        <div class="footer-contact">
+          <span>ut.beauty@info.com</span>
+          <span>(+5999) 674 5689</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════ LIGHTBOX ═══════════════ -->
+<div class="lb-overlay" id="lbOverlay" role="dialog" aria-modal="true" aria-label="Video player" aria-hidden="true">
+  <div class="lb-frame">
+    <button class="lb-close" id="lbClose" aria-label="Close video">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="lb-frame-inner">
+      <video id="lbVideo" playsinline controls preload="metadata"></video>
+    </div>
+    <div class="lb-caption">
+      <div class="lb-caption-title" id="lbTitle"></div>
+      <div class="lb-caption-desc"  id="lbDesc"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+
+<script>
+// ──────────────────────────────────────────────────────────────
+// GALLERY ITEMS — EDIT title + desc for each card.
+// (videoFile filenames match brand_assets/ exactly — note gallery-0009
+//  has an extra zero, intentional.)
+// ──────────────────────────────────────────────────────────────
+const galleryItems = [
+  { src: 'brand_assets/gallery-001.mp4',  eyebrow: 'Facial',            desc: 'Something about her skin that day just hit different. Watch what happened between the first touch and the last.' },
+  { src: 'brand_assets/gallery-002.mp4',  eyebrow: 'Grand Opening',     desc: 'The night we opened the doors for real. You had to be there — but this is the next best thing.' },
+  { src: 'brand_assets/gallery-003.mp4',  eyebrow: 'Lash Extensions',   desc: 'She came in quiet. She left like she owned the room. That shift? It\'s in the lashes.' },
+  { src: 'brand_assets/gallery-004.mp4',  eyebrow: 'Waxing',            desc: 'Clean, smooth, zero drama. This is what happens when someone actually knows what they\'re doing.' },
+  { src: 'brand_assets/gallery-005.mp4',  eyebrow: 'Behind the Scenes', desc: 'Someone asked a question we get all the time. The answer? Better heard in person.' },
+  { src: 'brand_assets/gallery-006.mp4',  eyebrow: 'Waxing',            desc: 'Before and after — no filter, no tricks. Just the kind of results that make you want to book tomorrow.' },
+  { src: 'brand_assets/gallery-007.mp4',  eyebrow: 'Men\'s Facial',     desc: 'Yes, he booked. Yes, he\'d do it again. Some things are just worth trying once.' },
+  { src: 'brand_assets/gallery-008.mp4',  eyebrow: 'Where It Started',  desc: 'Before the salon, before Curaçao — there was a room at home and a dream that wouldn\'t quit.' },
+  { src: 'brand_assets/gallery-0009.mp4', eyebrow: 'Nail Care',         desc: 'His. Hers. Both stunning. Nail care looks good on everyone — and this one proves it.' },
+  { src: 'brand_assets/gallery-010.mp4',  eyebrow: 'Lash Extensions',   desc: 'You can see the moment she noticed them in the mirror. We didn\'t need to say a word.' },
+  { src: 'brand_assets/gallery-011.mp4',  eyebrow: 'Massage & Facial',  desc: 'There\'s a version of you that\'s completely switched off from the world. She found her.' },
+  { src: 'brand_assets/gallery-012.mp4',  eyebrow: 'Client Moment',     desc: 'She\'s been coming for years. She did NOT see this one coming. Neither did the internet.' },
+  { src: 'brand_assets/gallery-013.mp4',  eyebrow: 'Year in Review',    desc: 'Every treatment, every transformation, every client — 2025 in one place. Unforgettable.' },
+  { src: 'brand_assets/gallery-014.mp4',  eyebrow: 'Makeup',            desc: 'The transformation starts before the final brush. Watch what confidence looks like being built.' },
+];
+</script>
+
+<script>
+// ── Nav scroll — floating buttons show/hide ───────────────────
+const menuBtn = document.getElementById('menuBtn');
+const bookBtn = document.getElementById('bookBtn');
+let lastScrollY = window.scrollY;
+let menuOpenScrollY = null;
+let footerAnimActive = false;
+
+function setNavVisibility(visible) {
+  if (typeof gsap === 'undefined') return;
+  gsap.to([menuBtn, bookBtn], {
+    autoAlpha: visible ? 1 : 0,
+    duration: 0.25,
+    ease: 'power2.inOut',
+    overwrite: 'auto',
+  });
+}
+
+document.addEventListener('menu:close', () => { menuOpenScrollY = null; });
+window.addEventListener('scroll', () => {
+  if (footerAnimActive) return;
+  const y = window.scrollY;
+  if (menuBtn && menuBtn.classList.contains('is-open')) {
+    if (menuOpenScrollY === null) menuOpenScrollY = y;
+    if (Math.abs(y - menuOpenScrollY) > 40) document.dispatchEvent(new Event('menu:close'));
+    setNavVisibility(true);
+  } else if (y < 80) {
+    setNavVisibility(true);
+  } else if (y > lastScrollY) {
+    setNavVisibility(false);
+  } else {
+    setNavVisibility(true);
+  }
+  lastScrollY = y;
+}, { passive: true });
+
+// ── Menu panel ────────────────────────────────────────────────
+(function() {
+  const menuBtn      = document.getElementById('menuBtn');
+  const menuPanel    = document.getElementById('menuPanel');
+  const menuBackdrop = document.getElementById('menuBackdrop');
+  let isOpen = false;
+
+  function openMenu() {
+    if (isOpen) return;
+    isOpen = true;
+    menuBtn.classList.add('is-open');
+    menuBtn.setAttribute('aria-expanded', 'true');
+    menuBackdrop.classList.add('is-open');
+    menuPanel.classList.add('is-open');
+
+    // Also read bookBtn's rect — on mobile the panel spans nearly the full width, so it
+    // passes directly under/over bookBtn too and must clear whichever button is further
+    // in the panel's growth direction, not just menuBtn.
+    const btnRect  = document.getElementById('menuBtn').getBoundingClientRect();
+    const bookRect = document.getElementById('bookBtn').getBoundingClientRect();
+    const openUpward = !!footerAnimActive;
+    menuPanel.dataset.openUpward = openUpward ? '1' : '0';
+
+    // On mobile the panel is centered on screen and width-fitted so it never
+    // overflows; desktop keeps the button-left-anchored 360px panel.
+    const isMobile = window.innerWidth <= 767;
+    const panelW = isMobile ? Math.min(360, window.innerWidth - 32) : 360;
+    menuPanel.style.left = isMobile
+      ? ((window.innerWidth - panelW) / 2) + 'px'
+      : btnRect.left + 'px';
+
+    // Anchor right next to the clicked button. bookBtn already blurs/dims and goes
+    // non-interactive the moment the menu opens (see .menu-backdrop.is-open ~ #bookBtn),
+    // so it's fine for the panel to grow past it — no need to clamp height against it.
+    // Only the top-of-page (downward) case still nudges the anchor itself when bookBtn
+    // conflicts at zero height (both buttons share the same row there), so the panel's
+    // very edge doesn't start inside it.
+    const gap = 8;
+    const safeMargin = 16;
+    const desiredH = 272;
+    const bookZoneStart = bookRect.top - gap;
+    const bookZoneEnd   = bookRect.bottom + gap;
+    let maxH;
+    if (openUpward) {
+      menuPanel.style.top = 'auto';
+      const bottomAnchor = btnRect.top - gap;
+      maxH = bottomAnchor - safeMargin;
+      menuPanel.style.bottom = (window.innerHeight - bottomAnchor) + 'px';
+    } else {
+      menuPanel.style.bottom = 'auto';
+      const naiveTop = btnRect.bottom + gap;
+      let topAnchor;
+      if (naiveTop >= bookZoneEnd) {
+        topAnchor = naiveTop;
+        maxH = window.innerHeight - topAnchor - safeMargin;
+      } else if (naiveTop <= bookZoneStart) {
+        topAnchor = naiveTop;
+        maxH = bookZoneStart - naiveTop;
+      } else {
+        topAnchor = bookZoneEnd;
+        maxH = window.innerHeight - topAnchor - safeMargin;
+      }
+      menuPanel.style.top = topAnchor + 'px';
+    }
+    // Floor is just a safety net against a zero/negative height — it must never
+    // exceed maxH, or it would force the exact overlap this logic exists to prevent.
+    const targetH = Math.max(40, Math.min(desiredH, maxH));
+
+    menuPanel.style.transition = 'width 0.32s cubic-bezier(0.65,0,0.35,1)';
+    menuPanel.style.width = panelW + 'px';
+
+    setTimeout(() => {
+      menuPanel.style.transition = 'height 0.36s cubic-bezier(0.65,0,0.35,1)';
+      menuPanel.style.height = targetH + 'px';
+      setTimeout(() => menuPanel.classList.add('links-visible'), 120);
+      // Only relax to natural/auto height if it fully fit within the clamp —
+      // otherwise keep the explicit height so .menu-panel-inner's overflow-y:auto
+      // scrolls the content instead
+      setTimeout(() => {
+        if (targetH >= desiredH) menuPanel.style.height = 'auto';
+        // Only now can overflow-y switch on, so a still-animating (and therefore
+        // still content-overflowing) panel never flashes a scrollbar mid-transition
+        menuPanel.classList.add('height-settled');
+      }, 360);
+    }, 300);
+  }
+
+  function closeMenu() {
+    if (!isOpen) return;
+    isOpen = false;
+    menuBtn.classList.remove('is-open');
+    menuBtn.setAttribute('aria-expanded', 'false');
+
+    menuPanel.classList.remove('links-visible');
+    // Turn scrolling back off immediately so the height-collapse transition below
+    // never flashes a scrollbar either
+    menuPanel.classList.remove('height-settled');
+
+    setTimeout(() => {
+      const currentH = menuPanel.getBoundingClientRect().height;
+      menuPanel.style.height = currentH + 'px';
+      menuPanel.getBoundingClientRect();
+      menuPanel.style.transition = 'height 0.36s cubic-bezier(0.65,0,0.35,1)';
+      menuPanel.style.height = '0';
+
+      setTimeout(() => {
+        menuPanel.style.transition = 'width 0.32s cubic-bezier(0.65,0,0.35,1)';
+        menuPanel.style.width = '0';
+        setTimeout(() => {
+          menuPanel.classList.remove('is-open');
+          menuPanel.style.top    = '';
+          menuPanel.style.bottom = '';
+          menuPanel.dataset.openUpward = '0';
+          // Only now restore bookBtn (it's keyed off .menu-backdrop.is-open) — removing
+          // this earlier let it snap back bright/on-top while the panel was still visibly
+          // closing
+          menuBackdrop.classList.remove('is-open');
+        }, 320);
+      }, 340);
+    }, 180);
+  }
+
+  menuBtn.addEventListener('click', () => isOpen ? closeMenu() : openMenu());
+  menuBackdrop.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) closeMenu(); });
+  document.addEventListener('menu:close', closeMenu);
+})();
+
+// ── Button swap animation (arrow ↔ label) ────────────────────
+function attachBtnSwap(btn) {
+  const arrow = btn.querySelector('.btn-arrow');
+  const label = btn.querySelector('.btn-label');
+  if (!arrow || !label) return;
+
+  btn.addEventListener('mouseenter', () => {
+    const gap = parseFloat(getComputedStyle(btn).gap) || 8;
+    const aw = arrow.offsetWidth;
+    const lw = label.offsetWidth;
+    arrow.style.transform = `translateX(${lw + gap}px)`;
+    label.style.transform = `translateX(-${aw + gap}px)`;
+  });
+  btn.addEventListener('mouseleave', () => {
+    arrow.style.transform = '';
+    label.style.transform = '';
+  });
+}
+document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
+</script>
+
+<script>
+// ═══════════════ RADIAL SCROLL GALLERY ═══════════════
+(function () {
+  gsap.registerPlugin(ScrollTrigger);
+
+  const wheel       = document.getElementById('rsgWheel');
+  const mask        = document.getElementById('rsgMask');
+  const section     = document.getElementById('radial-gallery');
+  const caption     = document.getElementById('rsgCaption');
+  const VISIBLE_PCT = 0.45;       // 45 % of circle above the fold
+  const SCROLL_LEN  = 2500;       // px of scroll for one 360° rotation
+  const HIDDEN_PCT  = 1 - VISIBLE_PCT;
+
+  let radius        = 550;
+  let cardW         = 260;
+  let cardH         = Math.round(cardW * 4 / 3);
+  let mainTween     = null;
+  let revealTween   = null;
+  let captionShown  = false;      // guards the caption fade tween (mobile only)
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function measure() {
+    // clientWidth/Height (not innerWidth/Height): the oversized wheel inflates
+    // window.innerWidth via the mobile "layout viewport expands to fit overflow"
+    // quirk, which would corrupt both the vw<=767 branch check and card sizing.
+    // documentElement.clientWidth stays the true CSS viewport width.
+    const vw = document.documentElement.clientWidth;
+    if (vw <= 767) {
+      // Mobile: show the same top-arc "rainbow" as desktop. Desktop only shows
+      // the top arc because its ring is far taller than the viewport, so the
+      // bottom half sits below the fold. A phone is tall + narrow, so instead we
+      // (a) size the ring diameter ≈ viewport width — a 7-card rainbow spans the
+      // width and, crucially, the wheel no longer overflows the viewport — and
+      // (b) hard-clip the ring's lower half via .rsg-mask{overflow:hidden}
+      // (CSS, mobile only) so the upside-down bottom cards never show. The clip
+      // replaces the viewport-fold hiding that desktop gets for free.
+      radius = Math.round(vw * 0.5);
+      cardW  = Math.round(Math.max(140, Math.min(180, vw * 0.4)));
+      cardH  = Math.round(cardW * 4 / 3);
+    } else {
+      // Wheel diameter scales with viewport so the arc always fits; desktop is
+      // unchanged (capped at 550 → hit at ~1310px+). Card size scales in step.
+      radius = Math.round(Math.max(150, Math.min(550, vw * 0.42)));
+      cardW  = Math.round(Math.max(140, Math.min(260, vw * 0.19)));
+      cardH  = Math.round(cardW * 4 / 3);
+    }
+  }
+
+  // Play/pause wheel videos by visibility. The wheel keeps every card in the
+  // DOM while it rotates; without this every video streams + decodes at once.
+  const cardVidObserver = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      const v = en.target;
+      v.dataset.inview = en.isIntersecting ? '1' : '';
+      if (en.isIntersecting) {
+        if (!document.body.classList.contains('lb-open')) v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    });
+  }, { rootMargin: '10% 0px' });
+
+  function buildCards() {
+    wheel.innerHTML = '';
+    galleryItems.forEach((item, i) => {
+      const li = document.createElement('li');
+      li.className = 'rsg-item';
+
+      const card = document.createElement('div');
+      card.className = 'rsg-card';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `Play ${item.eyebrow} video`);
+      card.dataset.index = String(i);
+
+      const inner = document.createElement('div');
+      inner.className = 'rsg-card-inner';
+
+      const video = document.createElement('video');
+      video.src = item.src;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      video.preload = 'metadata';
+      video.disablePictureInPicture = true;
+      // Playback is gated by cardVidObserver (below) — only on-screen cards
+      // play, instead of all 14 videos decoding at once.
+      cardVidObserver.observe(video);
+
+      const play = document.createElement('div');
+      play.className = 'rsg-card-play';
+      play.setAttribute('aria-hidden', 'true');
+      play.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3.5 2.5v9l8-4.5z"/></svg>`;
+
+      const meta = document.createElement('div');
+      meta.className = 'rsg-card-meta';
+      meta.innerHTML = `
+        <span class="rsg-card-index">${String(i + 1).padStart(2, '0')} / ${String(galleryItems.length).padStart(2, '0')}</span>
+        <span class="rsg-card-title">${item.eyebrow}</span>
+        <span class="rsg-card-desc">${item.desc}</span>
+      `;
+
+      inner.appendChild(video);
+      inner.appendChild(play);
+      inner.appendChild(meta);
+      card.appendChild(inner);
+      li.appendChild(card);
+      wheel.appendChild(li);
+
+      // Hover / focus state
+      const setHover = (on) => {
+        if (on) {
+          li.classList.add('is-hover');
+          wheel.classList.add('has-hover');
+        } else {
+          li.classList.remove('is-hover');
+          wheel.classList.remove('has-hover');
+        }
+      };
+      card.addEventListener('mouseenter', () => setHover(true));
+      card.addEventListener('mouseleave', () => setHover(false));
+      card.addEventListener('focus',  () => setHover(true));
+      card.addEventListener('blur',   () => setHover(false));
+
+      const open = () => openLightbox(i);
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+    });
+  }
+
+  function positionItems() {
+    const diameter = radius * 2;
+    document.documentElement.style.setProperty('--rsg-card-w', cardW + 'px');
+    wheel.style.width  = diameter + 'px';
+    wheel.style.height = diameter + 'px';
+    wheel.style.bottom = (-(diameter * HIDDEN_PCT)) + 'px';
+    wheel.style.position = 'absolute';
+
+    const visibleH = diameter * VISIBLE_PCT + cardH / 2 + 60;
+    mask.style.height = visibleH + 'px';
+
+    const items = wheel.children;
+    const N = items.length;
+    for (let i = 0; i < N; i++) {
+      const angle = (i / N) * 2 * Math.PI;
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+      const rotDeg = (angle * 180) / Math.PI;
+      items[i].style.transform =
+        `translate(-50%, -50%) translate3d(${x}px, ${y}px, 0) rotate(${rotDeg + 90}deg)`;
+    }
+  }
+
+  function registerScroll() {
+    if (mainTween)   mainTween.scrollTrigger?.kill();
+    if (mainTween)   mainTween.kill();
+    if (revealTween) revealTween.scrollTrigger?.kill();
+    if (revealTween) revealTween.kill();
+
+    // Reset caption + pinned state so a resize rebuild starts clean.
+    section.classList.remove('rsg-pinned');
+    captionShown = false;
+    gsap.set(caption, { autoAlpha: 0 });
+
+    if (prefersReducedMotion) {
+      wheel.classList.add('is-mounted');
+      // No pin to drive the fade — show the statement statically instead.
+      gsap.set(caption, { autoAlpha: 1 });
+      return;
+    }
+
+    // Initial reveal — scale in items
+    revealTween = gsap.fromTo(wheel.children,
+      { scale: 0, autoAlpha: 0 },
+      {
+        scale: 1, autoAlpha: 1,
+        duration: 1.1, ease: 'back.out(1.2)', stagger: 0.04,
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse',
+        },
+        onStart: () => wheel.classList.add('is-mounted'),
+      }
+    );
+
+    // Scroll-driven rotation
+    mainTween = gsap.to(wheel, {
+      rotation: 360,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: section,
+        pin: true,
+        start: 'center center',
+        end: '+=' + SCROLL_LEN,
+        scrub: 1,
+        invalidateOnRefresh: true,
+        // While the section is locked, centre the arc (CSS transition on
+        // .rsg-mask) so the negative space below opens up for the caption.
+        onToggle: (self) => section.classList.toggle('rsg-pinned', self.isActive),
+        // Caption: slowly fade in just after the cards lock, hold it while the
+        // section is pinned, then fade out before the pin releases to the footer.
+        onUpdate: (self) => {
+          const show = self.progress > 0.06 && self.progress < 0.9;
+          if (show === captionShown) return;
+          captionShown = show;
+          gsap.to(caption, {
+            autoAlpha: show ? 1 : 0,
+            duration: show ? 1.2 : 0.5,
+            ease: 'power2.out',
+            overwrite: 'auto',
+          });
+        },
+      }
+    });
+  }
+
+  // ── Build + initial layout ──
+  measure();
+  buildCards();
+  positionItems();
+  registerScroll();
+
+  // Wait one frame to remove opacity-0 if reduced motion handled it
+  requestAnimationFrame(() => wheel.classList.add('is-mounted'));
+
+  // ── Debounced resize / orientation ──
+  let resizeTimer;
+  function onViewportChange() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      measure();
+      positionItems();
+      ScrollTrigger.refresh();
+    }, 120);
+  }
+  window.addEventListener('resize', onViewportChange);
+  window.addEventListener('orientationchange', onViewportChange);
+})();
+</script>
+
+<script>
+// ═══════════════ LIGHTBOX ═══════════════
+(function () {
+  const overlay = document.getElementById('lbOverlay');
+  const video   = document.getElementById('lbVideo');
+  const titleEl = document.getElementById('lbTitle');
+  const descEl  = document.getElementById('lbDesc');
+  const closeBtn = document.getElementById('lbClose');
+  const frame   = overlay.querySelector('.lb-frame');
+
+  // Cache references to wheel videos so we can pause them while lightbox is open
+  function wheelVideos() {
+    return Array.from(document.querySelectorAll('#rsgWheel video'));
+  }
+
+  window.openLightbox = function (index) {
+    const item = galleryItems[index];
+    if (!item) return;
+    video.src = item.src;
+    titleEl.textContent = item.eyebrow;
+    descEl.textContent  = item.desc;
+    overlay.classList.add('is-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('lb-open');
+    wheelVideos().forEach(v => v.pause());
+    // Defer play so transition starts cleanly
+    setTimeout(() => { video.play().catch(() => {}); }, 60);
+  };
+
+  function closeLightbox() {
+    overlay.classList.remove('is-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('lb-open');
+    video.pause();
+    // Resume wheel videos after lightbox animation — only the ones on screen
+    // (off-screen cards stay paused; the visibility observer owns them)
+    setTimeout(() => {
+      video.removeAttribute('src');
+      video.load();
+      wheelVideos().forEach(v => { if (v.dataset.inview === '1') v.play().catch(() => {}); });
+    }, 480);
+  }
+  window.closeLightbox = closeLightbox;
+
+  closeBtn.addEventListener('click', closeLightbox);
+
+  overlay.addEventListener('click', (e) => {
+    if (!frame.contains(e.target)) closeLightbox();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('is-open')) closeLightbox();
+  });
+})();
+</script>
+
+<script>
+// ── Footer parallax + button scroll-to-footer animation ───────
+(function () {
+  function init() {
+    const footer    = document.querySelector('footer');
+    const menuBtnEl = document.getElementById('menuBtn');
+    const bookBtnEl = document.getElementById('bookBtn');
+    const menuAnc   = document.getElementById('footerMenuAnchor');
+    const bookAnc   = document.getElementById('footerBookAnchor');
+    if (!footer || !menuBtnEl || !bookBtnEl || !menuAnc || !bookAnc) return;
+
+    gsap.set(footer, { yPercent: 6 });
+
+    const easeIO = gsap.parseEase('power2.inOut');
+
+    function captureNatural() {
+      gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
+      return {
+        mx: menuBtnEl.getBoundingClientRect().left,
+        my: menuBtnEl.getBoundingClientRect().top,
+        bx: bookBtnEl.getBoundingClientRect().left,
+        by: bookBtnEl.getBoundingClientRect().top,
+      };
+    }
+    let nat = captureNatural();
+
+    let lastRaw = -1;
+    let raf = 0;
+    let prevFooterAnimActive = false;
+
+    function tick() {
+      raf = 0;
+      const vH = window.innerHeight;
+      const scrollY = window.scrollY;
+      const maxScroll = document.body.scrollHeight - vH;
+      const startScroll = footer.offsetTop - vH;
+      const raw = Math.max(0, Math.min(1, (scrollY - startScroll) / (maxScroll - startScroll)));
+
+      if (Math.abs(raw - lastRaw) < 0.00005) return;
+      lastRaw = raw;
+
+      footerAnimActive = raw > 0.02;
+
+      if (footerAnimActive && !prevFooterAnimActive) {
+        setNavVisibility(true);
+      }
+      prevFooterAnimActive = footerAnimActive;
+
+      const e = easeIO(raw);
+
+      gsap.set(footer, { yPercent: 6 * (1 - raw) });
+
+      const mA = menuAnc.getBoundingClientRect();
+      const bA = bookAnc.getBoundingClientRect();
+
+      const safe = 20;
+      const menuH = menuBtnEl.offsetHeight || 22;
+      const bookH = bookBtnEl.offsetHeight || 38;
+      const menuTargetY = Math.min(mA.top, vH - menuH - safe);
+      const bookTargetY = Math.min(bA.top, vH - bookH - safe);
+      const bookTargetX = bA.right - bookBtnEl.offsetWidth;
+
+      gsap.set(menuBtnEl, { x: (mA.left - nat.mx) * e, y: (menuTargetY - nat.my) * e });
+      gsap.set(bookBtnEl, { x: (bookTargetX - nat.bx) * e, y: (bookTargetY - nat.by) * e });
+    }
+
+    function onScroll() {
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scrollend', function () { lastRaw = -1; tick(); }, { passive: true });
+
+    window.addEventListener('resize', function () {
+      nat = captureNatural();
+      lastRaw = -1;
+      tick();
+    });
+
+    requestAnimationFrame(function () { requestAnimationFrame(tick); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+<script>
+// ── Footer title slide-in animation ──────────────────────────
+(function() {
+  const unique = document.getElementById('footerWordUnique');
+  const touch  = document.getElementById('footerWordTouch');
+  if (!unique || !touch) return;
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        unique.classList.add('revealed');
+        touch.classList.add('revealed');
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.85 });
+
+  observer.observe(document.querySelector('footer'));
+})();
+</script>
+
+</body>
+</html>
