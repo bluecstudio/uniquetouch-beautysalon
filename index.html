@@ -738,7 +738,11 @@
        auto-sizes to the wider of the two — no JS measurement needed */
     .word-swap {
       display: inline-grid;
-      vertical-align: bottom;
+      /* baseline (not bottom): the hidden Cinzel span makes the grid box taller
+         than the Montserrat line, so bottom-aligning pushed the visible word
+         above the baseline of the text next to it (visible on mobile CTAs) */
+      vertical-align: baseline;
+      align-items: baseline;
     }
     .word-swap-mono,
     .word-swap-cinzel { grid-area: 1 / 1; }
@@ -2066,8 +2070,10 @@
       .hero-sub { font-size: 13px; line-height: 1.55; margin-bottom: 1.25rem; }
       .hero-ctas { justify-content: center; flex-wrap: wrap; gap: 0.875rem; }
 
-      /* Nav FABs — smaller + subtler, pulled inside the gold hero border */
-      #menuBtn { top: calc(var(--gutter) + 14px); left: calc(var(--gutter) + 14px); }
+      /* Nav FABs — smaller + subtler, pulled inside the gold hero border.
+         Menu gets the same 2.25rem box as the Book pill so their contents
+         share one vertical center line. */
+      #menuBtn { top: calc(var(--gutter) + 14px); left: calc(var(--gutter) + 14px); height: 2.25rem; }
       #bookBtn { top: calc(var(--gutter) + 14px); right: calc(var(--gutter) + 14px); font-size: 0.625rem; }
       .menu-btn-icon { width: 12px; height: 12px; }
       .menu-btn-label { font-size: 12px; }
@@ -2227,14 +2233,9 @@
       .hero-title-word { font-size: clamp(2.5rem, 13.5vw, 148px); }
       .rfg-card { max-width: min(82vw, 240px); }
 
-      /* Book FAB collapses to an arrow-only circle → never overlaps Menu */
-      #bookBtn { width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 50%; }
-      #bookBtn .btn-label { display: none; }
-      #bookBtn .btn-arrow { position: static; left: auto; transform: none; }
-      #bookBtn:hover .btn-arrow { left: auto; }
-      /* Match the footer Book anchor to the collapsed FAB width so the docked
-         button stays centered (see the 767px rule for the pill width). */
-      #footerBookAnchor { width: 2.5rem; }
+      /* Book pill keeps its label (matches desktop); just tighten it slightly
+         so Menu + pill clear each other down to 320px-wide screens. */
+      #bookBtn { padding: 8px 14px; }
     }
   </style>
 </head>
@@ -2365,7 +2366,7 @@
           <div class="video-badge" id="videoBadge">
             <div class="vb-media">
               <video class="vb-video" src="brand_assets/hero-vid.mp4"
-                     autoplay muted loop playsinline></video>
+                     autoplay muted loop playsinline preload="auto"></video>
             </div>
             <svg class="vb-ring-text" viewBox="0 0 163 162" width="163" height="162" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
 <ellipse cx="79.6036" cy="5.4811" rx="1.33333" ry="4" transform="rotate(-2.07651 79.6036 5.4811)" fill="white" fill-opacity="0.8"/>
@@ -2697,13 +2698,19 @@ let lastScrollY = window.scrollY;
 let menuOpenScrollY = null;
 let footerAnimActive = false;
 
+let navShown = true; // buttons start visible
 function setNavVisibility(visible) {
-  if (typeof gsap === 'undefined') return;
+  // State guard: the scroll handler calls this every scroll event, and with
+  // normalizeScroll driving touch scrolling from rAF that's every frame —
+  // each redundant gsap.to restarted the 0.25s fade from its current
+  // progress, so it never completed crisply. Only tween on an actual flip.
+  if (typeof gsap === 'undefined' || visible === navShown) return;
+  navShown = visible;
   gsap.to([menuBtn, bookBtn], {
     autoAlpha: visible ? 1 : 0,
     duration: 0.25,
     ease: 'power2.inOut',
-    overwrite: 'auto',
+    overwrite: 'auto', // still needed when direction flips mid-fade
   });
 }
 
@@ -3375,6 +3382,14 @@ initCourseRail();
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   gsap.registerPlugin(ScrollTrigger);
+  // Mobile pin stability. ignoreMobileResize: the iOS/Android URL-bar
+  // collapse fires resize mid-scroll, and the resulting ScrollTrigger.refresh
+  // re-measured every pin while pinned — that's the "page jumps / sections
+  // show on top of each other" glitch. normalizeScroll: forces scroll onto the
+  // main thread on touch devices so pinned sections (hero morph, services)
+  // actually hold still instead of lagging behind the composited scroll.
+  ScrollTrigger.config({ ignoreMobileResize: true });
+  if (ScrollTrigger.isTouch === 1) ScrollTrigger.normalizeScroll(true);
   window.scrollTo(0, 0);
   document.body.style.overflow = 'hidden';
 
@@ -3400,18 +3415,49 @@ document.addEventListener("DOMContentLoaded", () => {
       .to([plUnique, plTouchGroup], { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' })
       .to(plCircle,  { opacity: 1, y: 0, duration: 0.5,  ease: 'power2.out' }, '-=0.35')
       .to(plTagline, { opacity: 1, y: 0, duration: 0.4,  ease: 'power2.out' }, '+=0.1')
-      // Phase 2 — counter 0→100% with ring fill
+      // Phase 2 — counter 0→100% with ring fill.
+      // The morph video (vmVideo) must have a decodable frame before the site
+      // opens, or the scroll reveal starts on a black circle on slow
+      // connections. So the counter runs to 92% on its own clock, and the last
+      // 8% waits for the video (capped at 6s so a dead connection never traps
+      // the visitor on the preloader).
       .add(() => {
-        const proxy = { v: 0 };
+        const proxy   = { v: 0 };
+        const vmVid   = document.getElementById('vmVideo');
+        const bgVid   = document.querySelector('.hero-bg video');
+        // Kick playback now, behind the overlay — forces iOS to fetch + decode
+        // the first frame instead of waiting until the element is shown.
+        [vmVid, bgVid].forEach(v => { if (v) v.play().catch(() => {}); });
+
+        const videoReady = () => !vmVid || vmVid.readyState >= 2; // HAVE_CURRENT_DATA
+
+        function render() {
+          plCounter.textContent = Math.min(100, Math.round(proxy.v)) + '%';
+          plRing.style.strokeDashoffset = (CIRC * (1 - proxy.v / 100)).toFixed(3);
+        }
+        function finish() {
+          gsap.to(proxy, { v: 100, duration: 0.45, ease: 'power1.out', onUpdate: render, onComplete: doExit });
+        }
         gsap.to(proxy, {
-          v: 100,
-          duration: 2.5,
+          v: 92,
+          duration: 2.3,
           ease: 'power2.inOut',
-          onUpdate() {
-            plCounter.textContent = Math.min(100, Math.round(proxy.v)) + '%';
-            plRing.style.strokeDashoffset = (CIRC * (1 - proxy.v / 100)).toFixed(3);
-          },
-          onComplete: doExit
+          onUpdate: render,
+          onComplete() {
+            if (videoReady()) { finish(); return; }
+            let done = false;
+            const go = () => {
+              if (done) return;
+              done = true;
+              clearTimeout(cap);
+              vmVid.removeEventListener('loadeddata', go);
+              vmVid.removeEventListener('canplay', go);
+              finish();
+            };
+            const cap = setTimeout(go, 6000);
+            vmVid.addEventListener('loadeddata', go);
+            vmVid.addEventListener('canplay', go);
+          }
         });
       });
 
@@ -4111,6 +4157,19 @@ function initServicesReveal() {
   pop([0], 0.44, 1.15);         // centre / dominant card — gentle settle
   pop([-1, 1], 0.58, 1.15);     // near pair, together
   pop([-2, 2], 0.70, 1.15);     // far pair, together
+}
+
+// The -1-viewport overlap above is a one-time gsap.set, but on phones the
+// visual viewport height changes (URL bar). Re-sync it at the start of every
+// ScrollTrigger measurement pass so the services hand-off never drifts from
+// the hero pin's release point (stale offsets made both sections visible at
+// once during the transition).
+if (typeof ScrollTrigger !== 'undefined') {
+  ScrollTrigger.addEventListener('refreshInit', function () {
+    if (_svcRevealST && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set('#services', { marginTop: -window.innerHeight });
+    }
+  });
 }
 
 // Build it now (cards + gsap already exist synchronously), and rebuild after
