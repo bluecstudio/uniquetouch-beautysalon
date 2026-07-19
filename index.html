@@ -325,6 +325,12 @@
       background: var(--bg);
       z-index: 10;
     }
+    /* Phones shorter than 680px: let the pinned hero match the viewport
+       instead of overflowing below the fold (the min-height would otherwise
+       make the pin taller than the screen, clipping the badge and CTAs). */
+    @media (max-height: 679px) {
+      #hero { min-height: 100svh; }
+    }
     .hs-stage {
       position: relative;
       width: 100%;
@@ -3385,11 +3391,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Mobile pin stability. ignoreMobileResize: the iOS/Android URL-bar
   // collapse fires resize mid-scroll, and the resulting ScrollTrigger.refresh
   // re-measured every pin while pinned — that's the "page jumps / sections
-  // show on top of each other" glitch. normalizeScroll: forces scroll onto the
-  // main thread on touch devices so pinned sections (hero morph, services)
-  // actually hold still instead of lagging behind the composited scroll.
+  // show on top of each other" glitch. normalizeScroll (touch only, for pin
+  // stability) is enabled in the preloader's releaseScrollLock() instead of
+  // here — initializing it while the body scroll lock below is active
+  // preventDefaults all touch scrolling and can leave the page permanently
+  // unscrollable on iOS.
   ScrollTrigger.config({ ignoreMobileResize: true });
-  if (ScrollTrigger.isTouch === 1) ScrollTrigger.normalizeScroll(true);
   window.scrollTo(0, 0);
   document.body.style.overflow = 'hidden';
 
@@ -3407,6 +3414,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const plTagline     = document.getElementById('plTagline');
     const hero          = document.getElementById('hero');
     if (!preloader || !hero) return;
+
+    // Single, idempotent exit for the preloader's scroll lock. Reachable from
+    // three paths — the flip timeline's onComplete (normal), the runFlip
+    // catch (a layout/measure error must never trap the visitor), and a hard
+    // failsafe timeout (worst-case happy path ≈ 11s: 2.3s counter + 6s video
+    // cap + exit + flip). normalizeScroll is enabled only here, once the page
+    // is genuinely scrollable (see ScrollTrigger.config above).
+    let _unlocked = false;
+    function releaseScrollLock() {
+      if (_unlocked) return;
+      _unlocked = true;
+      hero.style.visibility = 'visible';
+      hero.style.opacity    = '1';
+      preloader.style.display = 'none';
+      if (plEllipse) plEllipse.style.display = 'none';
+      document.body.style.overflow = '';
+      if (ScrollTrigger.isTouch === 1) ScrollTrigger.normalizeScroll(true);
+      ScrollTrigger.refresh();
+    }
+    setTimeout(releaseScrollLock, 13000);
 
     const CIRC = 220.9; // 2π × 35.15
 
@@ -3476,6 +3503,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function runFlip() {
+      try { runFlipInner(); } catch (e) { releaseScrollLock(); }
+    }
+
+    function runFlipInner() {
       // Reveal hero behind the preloader overlay so DOM rects are accurate
       hero.style.visibility = 'visible';
       hero.style.opacity    = '1';
@@ -3503,14 +3534,7 @@ document.addEventListener("DOMContentLoaded", () => {
         borderRadius: '50%', opacity: 1
       });
 
-      const tl = gsap.timeline({
-        onComplete() {
-          preloader.style.display = 'none';
-          plEllipse.style.display = 'none';
-          document.body.style.overflow = '';
-          ScrollTrigger.refresh();
-        }
-      });
+      const tl = gsap.timeline({ onComplete: releaseScrollLock });
 
       // UNIQUE flies to hero title position
       if (huRect) {
@@ -3655,7 +3679,7 @@ document.addEventListener("DOMContentLoaded", () => {
         scrub: 1.2,
         pin: true,
         pinSpacing: true,
-        anticipatePin: 1,
+        anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
         invalidateOnRefresh: true,
         onRefresh: initPos,
         onLeave:             () => vrAudioBtn.classList.add('visible'),
@@ -3757,7 +3781,7 @@ document.addEventListener("DOMContentLoaded", () => {
         end: () => '+=' + (window.innerHeight * PIN_MULT),
         pin: true,
         pinSpacing: true,
-        anticipatePin: 1,
+        anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
         invalidateOnRefresh: true,
       });
 
@@ -4114,7 +4138,7 @@ function initServicesReveal() {
       scrub: 1,                               // premium lag; reverses on scroll-up
       pin: true,
       pinSpacing: true,
-      anticipatePin: 1,
+      anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
       invalidateOnRefresh: true,
       // Interactive only while pinned/revealing; non-interactive while it's the
       // transparent overlay above the hero (so the hero stays clickable).
