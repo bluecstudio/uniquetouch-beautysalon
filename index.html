@@ -2372,6 +2372,7 @@
           <div class="video-badge" id="videoBadge">
             <div class="vb-media">
               <video class="vb-video" src="brand_assets/hero-vid.mp4"
+                     poster="brand_assets/hero-poster.webp"
                      autoplay muted loop playsinline preload="auto"></video>
             </div>
             <svg class="vb-ring-text" viewBox="0 0 163 162" width="163" height="162" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -2418,6 +2419,7 @@
     <!-- ONE video element — full stage, clip-path masked to badge circle -->
     <div class="vm-wrap" id="vmWrap">
       <video id="vmVideo" src="brand_assets/hero-vid.mp4"
+             poster="brand_assets/hero-poster.webp"
              autoplay muted loop playsinline preload="auto"></video>
       <div class="vm-vignette" id="vmVignette"></div>
       <button class="vr-audio-btn muted" id="vrAudioBtn" aria-label="Toggle audio">
@@ -3391,11 +3393,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Mobile pin stability. ignoreMobileResize: the iOS/Android URL-bar
   // collapse fires resize mid-scroll, and the resulting ScrollTrigger.refresh
   // re-measured every pin while pinned — that's the "page jumps / sections
-  // show on top of each other" glitch. normalizeScroll (touch only, for pin
-  // stability) is enabled in the preloader's releaseScrollLock() instead of
-  // here — initializing it while the body scroll lock below is active
-  // preventDefaults all touch scrolling and can leave the page permanently
-  // unscrollable on iOS.
+  // show on top of each other" glitch. normalizeScroll was tried for touch
+  // pin stability and REMOVED on purpose: on iOS it hijacks native scrolling
+  // and, combined with this page's three pinned sections, caused jumpy scroll
+  // positions and sections painting over each other. Do not re-add it.
   ScrollTrigger.config({ ignoreMobileResize: true });
   window.scrollTo(0, 0);
   document.body.style.overflow = 'hidden';
@@ -3419,8 +3420,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // three paths — the flip timeline's onComplete (normal), the runFlip
     // catch (a layout/measure error must never trap the visitor), and a hard
     // failsafe timeout (worst-case happy path ≈ 11s: 2.3s counter + 6s video
-    // cap + exit + flip). normalizeScroll is enabled only here, once the page
-    // is genuinely scrollable (see ScrollTrigger.config above).
+    // cap + exit + flip).
     let _unlocked = false;
     function releaseScrollLock() {
       if (_unlocked) return;
@@ -3430,7 +3430,6 @@ document.addEventListener("DOMContentLoaded", () => {
       preloader.style.display = 'none';
       if (plEllipse) plEllipse.style.display = 'none';
       document.body.style.overflow = '';
-      if (ScrollTrigger.isTouch === 1) ScrollTrigger.normalizeScroll(true);
       ScrollTrigger.refresh();
     }
     setTimeout(releaseScrollLock, 13000);
