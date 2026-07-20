@@ -1244,6 +1244,21 @@
       .reviews-portrait { object-position: 76% center; }
     }
 
+    /* ── REVIEWS FADE-OUT ─────────────────────── */
+    /* Solid var(--bg) panel revealed via clip-path during the last stretch of
+       the pinned scroll — grows upward from the bottom edge so the section
+       arrives at the Courses handoff already a flat, edge-matched black,
+       instead of a full-bleed photo meeting a narrower inset card. Sits above
+       everything else in #reviews so it also masks any straggling card. */
+    .reviews-fade-out {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      background: var(--bg);
+      clip-path: inset(100% 0 0 0);
+      pointer-events: none;
+    }
+
     /* ── REVIEWS FLOAT GRID ──────────────────── */
     .reviews-float-grid {
       position: absolute;
@@ -1323,7 +1338,6 @@
       border: 1px solid rgba(212,175,55,0.5);
       box-shadow: 0 0 20px rgba(212,175,55,0.5);
       padding: 32px 2.75rem 3rem;
-      margin-top: var(--gutter);
       flex: 1;
     }
     .courses-bg {
@@ -2567,6 +2581,10 @@
       <span class="rfg-name">CHRIS</span>
     </div>
   </div>
+
+  <!-- Grows solid black from the bottom during the pin's final stretch —
+       seamless, flush handoff into #courses. -->
+  <div class="reviews-fade-out" id="reviewsFadeOut"></div>
 </section>
 
 <!-- ═══════════════ COURSES ══════════ -->
@@ -3770,9 +3788,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const rfgCards = gsap.utils.toArray('.rfg-card');
         if (!rfgCards.length) return;
 
-        const N          = rfgCards.length;   // 17
-        const CARD_DUR   = 0.6;               // fraction of [0..PIN_MULT] per card → 4 cards on screen at peak
-        const STAGGER_T  = PIN_MULT - CARD_DUR; // = 2.4 spread across stagger
+        const N        = rfgCards.length;   // 17
+        const CARD_DUR = 0.6;               // fraction of [0..PIN_MULT] per card → ~5 cards on screen at peak
+        const FADE_T   = 0.6;               // tail window reserved for the black handoff (last 20% of the pin)
+        // All card exits finish by PIN_MULT - FADE_T (≈78%), leaving real
+        // slack scroll distance before the pin unlocks — the eased scrub
+        // has room to catch up under a fast scroll instead of leaving a
+        // card visibly mid-transit right as #courses appears.
+        const STAGGER_T = PIN_MULT - CARD_DUR - FADE_T; // = 1.8 spread across stagger
 
         function randomiseX() {
           rfgCards.forEach(function (card) {
@@ -3791,7 +3814,7 @@ document.addEventListener("DOMContentLoaded", () => {
             trigger: '#reviews',
             start: 'top top',
             end: () => '+=' + (window.innerHeight * PIN_MULT),
-            scrub: 1.2,
+            scrub: 0.5,
             invalidateOnRefresh: true,
             onRefresh: randomiseX,
           }
@@ -3805,6 +3828,18 @@ document.addEventListener("DOMContentLoaded", () => {
             pos
           );
         });
+
+        // Black handoff: grows upward from the bottom edge across the
+        // reserved tail window, on the same timeline/scrub as the cards
+        // (a second ScrollTrigger on the same pinned element mismeasures
+        // its offsets against the pin spacer, so this has to share rfgTL's
+        // trigger rather than get its own). By the time the pin unlocks,
+        // the section is flat, solid var(--bg), flush with #courses.
+        rfgTL.fromTo('#reviewsFadeOut',
+          { clipPath: 'inset(100% 0 0 0)' },
+          { clipPath: 'inset(0% 0 0 0)', ease: 'power1.in', duration: FADE_T },
+          PIN_MULT - FADE_T
+        );
       })();
     })();
 
