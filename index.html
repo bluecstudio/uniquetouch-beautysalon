@@ -3789,13 +3789,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!rfgCards.length) return;
 
         const N        = rfgCards.length;   // 17
-        const CARD_DUR = 0.6;               // fraction of [0..PIN_MULT] per card → ~5 cards on screen at peak
-        const FADE_T   = 0.6;               // tail window reserved for the black handoff (last 20% of the pin)
-        // All card exits finish by PIN_MULT - FADE_T (≈78%), leaving real
-        // slack scroll distance before the pin unlocks — the eased scrub
-        // has room to catch up under a fast scroll instead of leaving a
-        // card visibly mid-transit right as #courses appears.
-        const STAGGER_T = PIN_MULT - CARD_DUR - FADE_T; // = 1.8 spread across stagger
+        const CARD_DUR = 0.6;               // fraction of [0..PIN_MULT] per card → ~4 cards on screen at peak
+        const STAGGER_T = PIN_MULT - CARD_DUR; // = 2.4 — cards stream across virtually the whole pin, no dead tail
 
         function randomiseX() {
           rfgCards.forEach(function (card) {
@@ -3829,16 +3824,19 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         });
 
-        // Black handoff: grows upward from the bottom edge across the
-        // reserved tail window, on the same timeline/scrub as the cards
-        // (a second ScrollTrigger on the same pinned element mismeasures
-        // its offsets against the pin spacer, so this has to share rfgTL's
-        // trigger rather than get its own). By the time the pin unlocks,
-        // the section is flat, solid var(--bg), flush with #courses.
+        // Black handoff: overlaps the tail of the card stream instead of
+        // waiting for it to finish, so the pin never hits a dead stretch of
+        // "nothing but a fade" — the ease-in keeps the clip-path essentially
+        // flat for the first two-thirds of its span, only becoming visible
+        // in roughly the last quarter, right alongside the final cards
+        // exiting. Shares rfgTL's trigger/scrub rather than its own
+        // ScrollTrigger (a second one on the same pinned element mismeasures
+        // its offsets against the pin spacer). Still fully closed by
+        // PIN_MULT, so it keeps masking any straggling card on a fast scroll.
         rfgTL.fromTo('#reviewsFadeOut',
           { clipPath: 'inset(100% 0 0 0)' },
-          { clipPath: 'inset(0% 0 0 0)', ease: 'power1.in', duration: FADE_T },
-          PIN_MULT - FADE_T
+          { clipPath: 'inset(0% 0 0 0)', ease: 'power3.in', duration: PIN_MULT * 0.5 },
+          PIN_MULT * 0.5
         );
       })();
     })();
