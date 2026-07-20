@@ -3112,42 +3112,41 @@ function svcShowcaseEls() {
   ];
 }
 
-function svcShowcaseDrag(deltaX) {
-  // Track drag live — no transition, move proportionally (damped)
-  var ratio = 0.65;
-  svcShowcaseEls().forEach(function(el) {
-    el.style.transition = 'none';
-    el.style.opacity    = String(1 - Math.min(Math.abs(deltaX) / 220, 0.55));
-    el.style.transform  = 'translateX(' + (deltaX * ratio) + 'px)';
-  });
-}
+// Title stays put through the whole drag (see the drag handlers below — no
+// per-pointermove coupling here anymore). It only moves — a blur+fade
+// crossfade, no slide — once a card switch actually commits, matching the
+// card settle's Spring easing so the two read as one motion, not a shared
+// dragged "block". Single source of truth for the swap: svcNavigate() below.
+var SVC_SHOWCASE_EASE = 'cubic-bezier(0.22,0.8,0.32,1)'; // Spring — same as svcApplyStyle()
+var SVC_SHOWCASE_BLUR = '6px';
 
-function svcShowcaseSnap(direction) {
-  // Snap new content in from entry side, spring to rest — same easing as cards
-  var c = categories[svcActiveIdx];
-  var l = categories[svcGetSvcIdx(-1)];
-  var r = categories[svcGetSvcIdx(1)];
-  var newTexts = [c.name, l.name, r.name];
-  var inX = direction * 40;
-  svcShowcaseEls().forEach(function(el, i) {
-    el.style.transition = 'none';
-    el.textContent      = newTexts[i];
+function svcShowcaseCrossfade(direction) {
+  var outMs = 220, inMs = 300;
+  svcShowcaseEls().forEach(function(el) {
+    el.style.transition = 'opacity ' + outMs + 'ms ' + SVC_SHOWCASE_EASE + ', filter ' + outMs + 'ms ' + SVC_SHOWCASE_EASE;
     el.style.opacity    = '0';
-    el.style.transform  = 'translateX(' + inX + 'px)';
-    el.getBoundingClientRect();
-    el.style.transition = '';
-    el.style.opacity    = '1';
-    el.style.transform  = 'translateX(0)';
+    el.style.filter      = 'blur(' + SVC_SHOWCASE_BLUR + ')';
   });
-}
-
-function svcShowcaseReset() {
-  // Spring back to rest (drag cancelled)
-  svcShowcaseEls().forEach(function(el) {
-    el.style.transition = '';
-    el.style.opacity    = '1';
-    el.style.transform  = 'translateX(0)';
-  });
+  setTimeout(function() {
+    var c = categories[svcActiveIdx];
+    var l = categories[svcGetSvcIdx(-1)];
+    var r = categories[svcGetSvcIdx(1)];
+    var newTexts = [c.name, l.name, r.name];
+    svcShowcaseEls().forEach(function(el, i) {
+      el.style.transition = 'none';
+      el.textContent      = newTexts[i];
+    });
+    // Double rAF so the browser commits the text swap before the fade-in starts.
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        svcShowcaseEls().forEach(function(el) {
+          el.style.transition = 'opacity ' + inMs + 'ms ' + SVC_SHOWCASE_EASE + ', filter ' + inMs + 'ms ' + SVC_SHOWCASE_EASE;
+          el.style.opacity    = '1';
+          el.style.filter      = 'blur(0px)';
+        });
+      });
+    });
+  }, outMs);
 }
 
 function svcUpdateShowcase(animate, direction) {
@@ -3163,7 +3162,7 @@ function svcUpdateShowcase(animate, direction) {
     svcShowcaseEls().forEach(function(el) { el.style.transition = ''; });
     return;
   }
-  svcShowcaseSnap(direction || 1);
+  svcShowcaseCrossfade(direction || 1);
 }
 
 function svcInit() {
@@ -3188,35 +3187,9 @@ function svcNavigate(direction) {
     svcApplyStyle(slot.el, slot.offset, 0, true);
   });
 
-  // Phase A — fade titles out immediately as cards start moving
-  svcShowcaseEls().forEach(function(el) {
-    el.style.transition = 'opacity 0.26s ease, transform 0.26s ease';
-    el.style.opacity    = '0';
-    el.style.transform  = 'translateX(' + (direction * -20) + 'px)';
-  });
-
-  // Phase B — swap text and fade in at the midpoint of the card animation
-  setTimeout(function() {
-    var c = categories[svcActiveIdx];
-    var l = categories[svcGetSvcIdx(-1)];
-    var r = categories[svcGetSvcIdx(1)];
-    var newTexts = [c.name, l.name, r.name];
-    svcShowcaseEls().forEach(function(el, i) {
-      el.style.transition = 'none';
-      el.textContent      = newTexts[i];
-      el.style.transform  = 'translateX(' + (direction * 20) + 'px)';
-    });
-    // Double rAF to ensure browser commits the snap before starting fade-in
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        svcShowcaseEls().forEach(function(el) {
-          el.style.transition = 'opacity 0.30s cubic-bezier(0.22,0.8,0.32,1), transform 0.30s cubic-bezier(0.22,0.8,0.32,1)';
-          el.style.opacity    = '1';
-          el.style.transform  = 'translateX(0)';
-        });
-      });
-    });
-  }, 260);
+  // Title stays put — blur+fade crossfade only, matched to the card's
+  // Spring settle. See svcShowcaseCrossfade().
+  svcShowcaseCrossfade(direction);
 
   // Recycle off-screen card and release lock after cards settle
   setTimeout(function() {
@@ -3261,7 +3234,8 @@ function svcNavigate(direction) {
       slot.el.style.transition = 'none';
       slot.el.style.transform = 'translate(calc(-50% + ' + tx + 'px), -50%)';
     });
-    svcShowcaseDrag(svcDragDelta);
+    // Title is intentionally untouched here — it only reacts once a switch
+    // commits (svcNavigate -> svcShowcaseCrossfade), not on every drag frame.
   }
 
   function onEnd() {
@@ -3275,7 +3249,6 @@ function svcNavigate(direction) {
     } else {
       svcDragDelta = 0;
       svcSlots.forEach(function(slot) { svcApplyStyle(slot.el, slot.offset, 0, true); });
-      svcShowcaseReset();
     }
   }
 
@@ -4079,55 +4052,33 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 </script>
 
-<!-- ═══════════════ SERVICES REVEAL (pinned + scrubbed assemble) ═══════════ -->
+<!-- ═══════════════ SERVICES PIN (hero handoff) ═══════════ -->
 <script>
-/* Holds #services fixed while the reader scrolls one viewport, and scrubs a
-   staged assembly tied 1:1 to scroll (so it reverses on scroll-up):
-     header rises  →  showcase pill  →  centre card  →  near pair  →  far pair
-   The cards animate a dedicated .card-reveal layer only, so this never fights
-   the carousel (which owns .svc-card transform/opacity) or the hover-lift
-   (which owns .card-inner transform). */
+/* Holds #services fixed while the reader scrolls one viewport, overlapping
+   the hero's scroll-out so the video-expansion fade-to-black hands off to
+   the services background with no gap. No entrance choreography — header,
+   showcase pill, and cards are all visible at their resting state from the
+   moment the section is built; only the pin/overlap/background-fade timing
+   below is scrubbed. */
 var _svcRevealST = null;
 function initServicesReveal() {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
   if (_svcRevealST) { _svcRevealST.kill(); _svcRevealST = null; }
 
-  const header = ['.svc-section-label', '.svc-heading', '.svc-desc'];
-  // svcSlots is canonical (-2,-1,0,1,2) right after svcInit, which is when this
-  // runs / re-runs. Two channels per card, kept separate so neither collides:
-  //   .svc-card opacity  → composites ring + glow + content (carousel targets)
-  //   .card-reveal transform (scale+y) → the "pop", never touched elsewhere
-  const cardsAt  = (o) => (svcSlots || []).filter((s) => s.offset === o).map((s) => s.el);
-  const revealAt = (o) => cardsAt(o).map((el) => el.querySelector('.card-reveal')).filter(Boolean);
-  const allCards  = (svcSlots || []).map((s) => s.el).filter(Boolean);
-  const allReveal = allCards.map((el) => el.querySelector('.card-reveal')).filter(Boolean);
-  // Per-offset resting opacity — mirrors svcApplyStyle (centre 1, near .55, far .35).
-  const restOp = (o) => (Math.abs(o) === 0 ? 1 : Math.abs(o) === 1 ? 0.55 : 0.35);
-
-  // Reduced motion: skip the pin + motion entirely, leave everything readable
-  // and in normal flow (undo any overlap props a prior motion run may have set).
+  // Reduced motion: skip the pin entirely, leave everything readable and in
+  // normal flow (undo any overlap props a prior motion run may have set).
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     gsap.set('#services', { marginTop: 0, zIndex: 1, backgroundColor: 'var(--bg)', pointerEvents: 'auto' });
-    gsap.set(header, { clearProps: 'opacity,transform' });
-    gsap.set('.showcase-row', { clearProps: 'opacity,transform' });
-    if (allReveal.length) gsap.set(allReveal, { clearProps: 'transform' });
     return;
   }
 
   // Overlap the hero's scroll-out: pull #services up one viewport so it reaches
   // the top exactly as the hero pin releases, paint it above the hero, and start
   // it transparent so the still-animating video shows through during the brief
-  // overlap. The bg fades in as the first reveal step (below) — no dark gap.
+  // overlap. The bg fades in as the pin engages — no dark gap.
   // pointerEvents:none while transparent so it doesn't swallow clicks meant for
   // the hero (e.g. the mute button) underneath; restored when the pin engages.
   gsap.set('#services', { marginTop: -window.innerHeight, zIndex: 11, backgroundColor: 'rgba(10,9,6,0)', pointerEvents: 'none' });
-
-  // Hidden start states (set via JS, not CSS, so a script-less page still
-  // shows the content). #services sits behind the hero pin, so no FOUC.
-  gsap.set(header, { opacity: 0, y: 16 });
-  gsap.set('.showcase-row', { opacity: 0, y: 12 });
-  if (allCards.length)  gsap.set(allCards,  { opacity: 0 });          // hides ring/glow too
-  if (allReveal.length) gsap.set(allReveal, { scale: 0.96, y: 8 });
 
   const tl = gsap.timeline({
     scrollTrigger: {
@@ -4139,7 +4090,7 @@ function initServicesReveal() {
       pinSpacing: true,
       anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
       invalidateOnRefresh: true,
-      // Interactive only while pinned/revealing; non-interactive while it's the
+      // Interactive only while pinned; non-interactive while it's the
       // transparent overlay above the hero (so the hero stays clickable).
       onEnter:     () => gsap.set('#services', { pointerEvents: 'auto' }),
       onEnterBack: () => gsap.set('#services', { pointerEvents: 'auto' }),
@@ -4154,32 +4105,8 @@ function initServicesReveal() {
   ScrollTrigger.sort();
 
   // The instant it pins, fade the warm-black backdrop in (matches the hero's
-  // fadeout) so the assembly emerges from --bg rather than the live video …
+  // fadeout) so the section emerges from --bg rather than the live video.
   tl.to('#services', { backgroundColor: '#0A0906', ease: 'none', duration: 0.06 }, 0.00);
-
-  // Header rises first (label → heading → desc), then the pill …
-  tl.to('.svc-section-label', { opacity: 1, y: 0, ease: 'power3.out', duration: 0.16 }, 0.00)
-    .to('.svc-heading',       { opacity: 1, y: 0, ease: 'power3.out', duration: 0.16 }, 0.10)
-    .to('.svc-desc',          { opacity: 1, y: 0, ease: 'power3.out', duration: 0.16 }, 0.20)
-    .to('.showcase-row',      { opacity: 1, y: 0, ease: 'power3.out', duration: 0.16 }, 0.32);
-
-  // … then the cards ripple outward from the middle. Opacity fades the whole
-  // card in (ring + glow + content); back.out on the .card-reveal transform
-  // gives the "pop" (the site's Overshoot easing feel). Empty pairs skip safely.
-  const pop = (offsets, at, overshoot) => {
-    const cards  = offsets.flatMap(cardsAt);
-    const layers = offsets.flatMap(revealAt);
-    if (!cards.length) return;
-    // Fade each card to its own resting opacity (centre 1, near .55, far .35).
-    cards.forEach((el) => {
-      tl.to(el, { opacity: restOp(svcSlots.find((s) => s.el === el).offset),
-                  ease: 'power2.out', duration: 0.20 }, at);
-    });
-    tl.to(layers, { scale: 1, y: 0, ease: 'back.out(' + overshoot + ')', duration: 0.20 }, at);
-  };
-  pop([0], 0.44, 1.15);         // centre / dominant card — gentle settle
-  pop([-1, 1], 0.58, 1.15);     // near pair, together
-  pop([-2, 2], 0.70, 1.15);     // far pair, together
 }
 
 // The -1-viewport overlap above is a one-time gsap.set, but on phones the
