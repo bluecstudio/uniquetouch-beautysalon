@@ -1323,6 +1323,7 @@
       border: 1px solid rgba(212,175,55,0.5);
       box-shadow: 0 0 20px rgba(212,175,55,0.5);
       padding: 32px 2.75rem 3rem;
+      margin-top: var(--gutter);
       flex: 1;
     }
     .courses-bg {
@@ -2130,15 +2131,20 @@
       .courses-desc { font-size: clamp(9.5px, 2.75vw, 11px); line-height: 1.5; margin-bottom: 1.25rem; }
       /* "Start … professional." on one line, a touch larger than the line above */
       .courses-desc-2 { white-space: nowrap !important; font-size: clamp(10.5px, 3vw, 12px); }
-      /* Breathing room under the "Begin Your Journey" button */
-      .courses-inner > div:first-child .btn-ghost { margin-top: 0.5rem; margin-bottom: var(--space-4); }
+      /* "Begin Your Journey" is hidden on mobile, but visibility:hidden (not
+         display:none) keeps its box so this spacing still separates the
+         copy above from the course cards below. */
+      .courses-inner > div:first-child .btn-ghost { visibility: hidden; margin-top: 0.5rem; margin-bottom: var(--space-4); }
 
-      /* Card system: active fills the column so the pair stays centered and
-         un-squished in both swap states (active + gap 12 + preview 52 = 100%) */
-      .course-rail { justify-content: center; }
-      .course-card { min-height: clamp(420px, 62vh, 520px); }
-      .course-slide.active { width: calc(100% - 64px); }
-      .course-slide.preview { width: 52px; }
+      /* Card system: stacked vertically and centered instead of the desktop
+         side-by-side row. Same swap animation, just rotated 90° — height
+         replaces width as the transitioned property, so the active card is
+         tall and the inactive one collapses to a short tappable bar. */
+      .course-rail { flex-direction: column; align-items: center; }
+      .course-card { min-height: 0; }
+      .course-slide { transition: height 0.55s cubic-bezier(0.4, 0, 0.2, 1); }
+      .course-slide.active { width: 100%; height: clamp(420px, 62vh, 520px); }
+      .course-slide.preview { width: 100%; height: 64px; }
       .course-body { padding: 22px 20px; }
       .course-tagline { white-space: normal; font-size: 1.125rem; }
       .course-features li { font-size: 0.75rem; }
