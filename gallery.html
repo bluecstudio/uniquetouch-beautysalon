@@ -929,6 +929,10 @@
       .footer-beauty-tag { order: 1; margin-bottom: 8px; font-size: 1.15rem; }
       .footer-title-left { order: 2; }
       .footer-title-right-group .footer-title-word { order: 3; }
+      /* Eyebrow + both headers hidden on mobile — .footer-head stays in the
+         flex flow (not display:none itself) so its margin-top:auto above
+         still absorbs leftover space the same way it did with them visible. */
+      .footer-title-word, .footer-beauty-tag { display: none; }
       /* Curaçao tagline removed on mobile — keeps the header block clean. */
       .footer-location { display: none; }
       .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; margin-bottom: 6vh; }

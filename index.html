@@ -2215,8 +2215,12 @@
       /* Courses: single column, card + preview fit the viewport.
          Grid items must be allowed to shrink (min-width:0), and the rail
          wrapper's desktop-only inline width/offsets are neutralised. */
-      .courses-card { padding: var(--space-4) 12px var(--space-5); }
-      .courses-inner { grid-template-columns: 1fr; gap: var(--space-4); }
+      /* Flex column (not grid) so .courses-inner can stretch to the card's
+         full flexed height below, letting justify-content:space-between push
+         the rail toward the bottom — otherwise leftover height just pools
+         below the rail instead of being claimed as breathing room above it. */
+      .courses-card { padding: var(--space-4) 12px var(--space-5); display: flex; flex-direction: column; }
+      .courses-inner { flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; gap: var(--space-4); }
       .courses-inner > * { min-width: 0; }
       .courses-inner > div:last-child { padding-top: 0 !important; margin-left: 0 !important; }
 
@@ -2302,6 +2306,10 @@
       .footer-beauty-tag { order: 1; margin-bottom: 8px; font-size: 1.15rem; }
       .footer-title-left { order: 2; }
       .footer-title-right-group .footer-title-word { order: 3; }
+      /* Eyebrow + both headers hidden on mobile — .footer-head stays in the
+         flex flow (not display:none itself) so its margin-top:auto above
+         still absorbs leftover space the same way it did with them visible. */
+      .footer-title-word, .footer-beauty-tag { display: none; }
       /* Curaçao tagline removed on mobile — keeps the header block clean. */
       .footer-location { display: none; }
       .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; margin-bottom: 6vh; }
