@@ -1110,7 +1110,13 @@
       background: var(--bg);
       padding: 0;
       overflow: hidden;
-      height: 100vh;
+      /* svh (not vh) so this box always matches the real visible viewport the
+         card-stream JS measures against (window.innerHeight) — plain vh on
+         mobile can render taller than the address-bar-shrunk viewport,
+         leaving cards clipped by a box bigger than what's on screen instead
+         of by the actual screen edge, so they sat visible/bunched at the
+         bottom instead of streaming fully off it. */
+      height: 100svh;
       display: flex;
       align-items: center;
     }
@@ -1491,6 +1497,22 @@
       width: 88px;
       cursor: pointer;
       border: 1px solid rgba(201,168,76,0.10);
+      /* width AND height both listed (not just width) — this selector's
+         specificity (.course-slide.preview) beats the mobile breakpoint's
+         plain .course-slide{transition:height}, so without height here the
+         mobile active→preview swap would snap instead of animating. */
+      transition: border-color 0.35s ease, box-shadow 0.35s ease,
+                  width 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+                  height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .course-slide.preview:hover,
+    .course-slide.preview:focus-visible {
+      border-color: rgba(201,168,76,0.55);
+      box-shadow: 0 0 24px rgba(201,168,76,0.25);
+    }
+    .course-slide.preview:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
     }
     @keyframes card-activate {
       0%   { transform: scale(1); }
@@ -1521,16 +1543,20 @@
     }
     .course-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    /* Dark overlay on preview card */
+    /* Dark overlay on preview card — lighter than a fully-crushed scrim so the
+       photo still reads; the label chip below carries its own legibility via
+       backdrop-blur rather than needing the whole image darkened. */
     .course-preview-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(8, 6, 4, 0.55);
-      transition: opacity 0.55s;
+      background: rgba(8, 6, 4, 0.40);
+      transition: opacity 0.35s ease;
       pointer-events: none;
     }
     .course-slide.active .course-preview-overlay { opacity: 0; pointer-events: none; }
     .course-slide.preview .course-preview-overlay { opacity: 1; }
+    .course-slide.preview:hover .course-preview-overlay,
+    .course-slide.preview:focus-visible .course-preview-overlay { opacity: 0.7; }
 
     /* Image brightness */
     .course-slide.active .course-thumb img {
@@ -1538,8 +1564,66 @@
       transition: filter 0.55s ease;
     }
     .course-slide.preview .course-thumb img {
-      filter: brightness(0.55);
-      transition: filter 0.55s ease;
+      filter: brightness(0.68);
+      transition: filter 0.35s ease;
+    }
+    .course-slide.preview:hover .course-thumb img,
+    .course-slide.preview:focus-visible .course-thumb img {
+      filter: brightness(0.8);
+    }
+
+    /* Preview label — small glass-card chip (same recipe as .rfg-card) that
+       names the collapsed course instead of leaving it a blank dimmed photo.
+       Desktop: rotated to read bottom-to-top inside the narrow vertical bar. */
+    .course-preview-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(180deg);
+      writing-mode: vertical-rl;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.625rem;
+      padding: 16px 9px;
+      background: rgba(0,0,0,0.10);
+      backdrop-filter: blur(35px);
+      -webkit-backdrop-filter: blur(35px);
+      border-radius: 14px;
+      border: 1px solid rgba(201,168,76,0.75);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease, border-color 0.35s ease;
+    }
+    .course-slide.preview .course-preview-label { opacity: 1; }
+    .course-slide.preview:hover .course-preview-label,
+    .course-slide.preview:focus-visible .course-preview-label {
+      border-color: rgba(201,168,76,0.95);
+    }
+    .cpl-text {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--cream);
+      white-space: nowrap;
+    }
+    .cpl-arrow {
+      display: flex;
+      flex-shrink: 0;
+      color: var(--gold);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .course-slide.preview:hover .cpl-arrow,
+    .course-slide.preview:focus-visible .cpl-arrow {
+      transform: scale(1.2);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cpl-arrow, .course-slide.preview { transition-duration: 0.01ms; }
+      .course-slide.preview:hover .cpl-arrow,
+      .course-slide.preview:focus-visible .cpl-arrow { transform: none; }
     }
 
     /* Frosted glass panel — matches .card-glass-box from services */
@@ -2138,17 +2222,22 @@
 
       /* Center all course copy on mobile */
       .courses-inner > div:first-child { text-align: center; }
-      .courses-title { text-align: center; }
-      .courses-tagline { white-space: normal; font-size: 1.25rem; }
+      /* Denser copy rhythm than desktop — this whole card needs to fit one
+         mobile viewport like the hero/services/reviews sections do, so
+         margins below are trimmed from their base values. */
+      .courses-title { text-align: center; margin-bottom: 0.5rem; }
+      .courses-tagline { white-space: normal; font-size: 1.25rem; margin-bottom: 0.5rem; }
       /* "Learn … income." stays 2 lines (its two nowrap blocks), just smaller */
       .courses-desc span { white-space: nowrap !important; }
-      .courses-desc { font-size: clamp(9.5px, 2.75vw, 11px); line-height: 1.5; margin-bottom: 1.25rem; }
+      .courses-desc { font-size: clamp(9.5px, 2.75vw, 11px); line-height: 1.5; margin-bottom: 0.75rem; }
       /* "Start … professional." on one line, a touch larger than the line above */
-      .courses-desc-2 { white-space: nowrap !important; font-size: clamp(10.5px, 3vw, 12px); }
+      .courses-desc-2 { white-space: nowrap !important; font-size: clamp(10.5px, 3vw, 12px); margin-bottom: 1rem; }
       /* "Begin Your Journey" is hidden on mobile, but visibility:hidden (not
-         display:none) keeps its box so this spacing still separates the
-         copy above from the course cards below. */
-      .courses-inner > div:first-child .btn-ghost { visibility: hidden; margin-top: 0.5rem; margin-bottom: var(--space-4); }
+         display:none) keeps a small box here so this spacing still separates
+         the copy above from the course cards below — collapsed to a slim
+         fixed gap instead of the full button's height so the section has
+         room to fit one viewport. */
+      .courses-inner > div:first-child .btn-ghost { visibility: hidden; height: 0; margin: 0 0 0.75rem; }
 
       /* Card system: stacked vertically and centered instead of the desktop
          side-by-side row. Same swap animation, just rotated 90° — height
@@ -2157,8 +2246,18 @@
       .course-rail { flex-direction: column; align-items: center; }
       .course-card { min-height: 0; }
       .course-slide { transition: height 0.55s cubic-bezier(0.4, 0, 0.2, 1); }
-      .course-slide.active { width: 100%; height: clamp(420px, 62vh, 520px); }
-      .course-slide.preview { width: 100%; height: 64px; }
+      .course-slide.active { width: 100%; height: clamp(340px, 48vh, 420px); }
+      .course-slide.preview { width: 100%; height: 56px; }
+      /* Horizontal bar here instead of the desktop vertical sliver — drop the
+         rotation and lay the chip out as a normal left-to-right row. */
+      .course-preview-label {
+        writing-mode: horizontal-tb;
+        transform: translate(-50%, -50%);
+        padding: 8px 16px;
+        border-radius: 100px;
+        gap: 0.5rem;
+      }
+      .cpl-text { font-size: 0.8125rem; }
       .course-body { padding: 22px 20px; }
       .course-tagline { white-space: normal; font-size: 1.125rem; }
       .course-features li { font-size: 0.75rem; }
@@ -3330,10 +3429,14 @@ function bulletImg() {
   return `<img src="brand_assets/buller-list.svg" class="bullet-svg" alt="" aria-hidden="true">`;
 }
 
+function coursePreviewArrow() {
+  return `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
 function buildCourseSlide(key, isActive) {
   const c = courses[key];
   const cls = isActive ? 'active' : 'preview';
-  return `<div class="course-slide course-card ${cls}" data-course-key="${key}">
+  return `<div class="course-slide course-card ${cls}" data-course-key="${key}" role="button" tabindex="0" aria-pressed="${isActive}" aria-label="${isActive ? c.tagline + ', currently shown' : 'Switch to ' + c.tagline}">
     <div class="course-card-inner">
       <div class="course-thumb">
         <img src="${c.img}" alt="${c.name}" loading="lazy">
@@ -3349,6 +3452,10 @@ function buildCourseSlide(key, isActive) {
         <a href="https://uniquetouchk1do.setmore.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="btn-gold"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Become <span class="word-swap"><span class="word-swap-mono">Certified</span><span class="word-swap-cinzel">Certified</span></span></span></a>
       </div>
       <div class="course-preview-overlay"></div>
+      <div class="course-preview-label" aria-hidden="true">
+        <span class="cpl-text">${c.tagline}</span>
+        <span class="cpl-arrow">${coursePreviewArrow()}</span>
+      </div>
     </div>
   </div>`;
 }
@@ -3360,22 +3467,32 @@ function initCourseRail() {
   rail.innerHTML = buildCourseSlide('facial', true) + buildCourseSlide('waxing', false);
   rail.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
 
+  function activateCourse(key) {
+    // Toggle classes + a11y state — CSS transitions do the rest
+    rail.querySelectorAll('.course-slide').forEach(s => {
+      const isMatch = s.dataset.courseKey === key;
+      s.classList.toggle('active', isMatch);
+      s.classList.toggle('preview', !isMatch);
+      s.setAttribute('aria-pressed', String(isMatch));
+      const tagline = courses[s.dataset.courseKey].tagline;
+      s.setAttribute('aria-label', isMatch ? tagline + ', currently shown' : 'Switch to ' + tagline);
+    });
+  }
+
   rail.addEventListener('click', (e) => {
     const slide = e.target.closest('.course-slide');
     if (!slide || slide.classList.contains('active')) return;
+    activateCourse(slide.dataset.courseKey);
+  });
 
-    const key = slide.dataset.courseKey;
-
-    // Toggle classes — CSS transitions do the rest
-    rail.querySelectorAll('.course-slide').forEach(s => {
-      if (s.dataset.courseKey === key) {
-        s.classList.add('active');
-        s.classList.remove('preview');
-      } else {
-        s.classList.add('preview');
-        s.classList.remove('active');
-      }
-    });
+  // Keyboard access — the slides are focusable (role="button" tabindex="0")
+  // but were never actionable from the keyboard before this.
+  rail.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const slide = e.target.closest('.course-slide');
+    if (!slide || slide.classList.contains('active')) return;
+    e.preventDefault();
+    activateCourse(slide.dataset.courseKey);
   });
 }
 
@@ -3428,6 +3545,18 @@ document.addEventListener("DOMContentLoaded", () => {
       preloader.style.display = 'none';
       if (plEllipse) plEllipse.style.display = 'none';
       document.body.style.overflow = '';
+      // #services' pin is created synchronously at parse time, before this
+      // preloader's own DOMContentLoaded-scoped ScrollTrigger setup has run —
+      // so it always measures against an incomplete layout and pins itself
+      // immediately (position:fixed, on top of the hero). A plain refresh()
+      // recalculates start/end but doesn't un-stick an already-engaged pin;
+      // only killing and recreating it (what initServicesReveal() does) does.
+      // That correction previously only ran on window 'load', which on a real
+      // mobile connection can fire long after this preloader has already
+      // finished and revealed the hero — leaving the cards visibly pinned
+      // over it in the meantime. Re-run it here so the fix lands before the
+      // hero is ever shown, regardless of how long other assets take.
+      if (typeof initServicesReveal === 'function') initServicesReveal();
       ScrollTrigger.refresh();
     }
     setTimeout(releaseScrollLock, 13000);
