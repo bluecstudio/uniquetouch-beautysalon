@@ -1808,14 +1808,26 @@
     .gif-wrap img { width: 100%; max-width: 560px; height: auto; display: block; }
 
     /* ── FOOTER ──────────────────────────────── */
+    /* Opaque full-bleed "stage" — masks #socials behind it for the entire
+       scroll-driven yPercent translate, so no transitional gap ever exposes
+       the section underneath (previously the card's own margin was the gap). */
     footer {
       position: relative;
       z-index: 2;
       box-sizing: border-box;
-      height: calc(100vh - 48px);
+      height: calc(100vh - 24px);
+      margin: calc(-6vh + 2.88px) 0 0;
+      background: var(--bg);
+    }
+    /* Visual card, inset within the opaque stage — reproduces the previous
+       footer's exact look/position (rounded, gold border, glow). */
+    .footer-card {
+      position: relative;
+      box-sizing: border-box;
+      height: calc(100% - 24px);
+      margin: 0 24px 24px;
       padding: 1rem 2.75rem 2.5rem;
       overflow: hidden;
-      margin: calc(-6vh + 2.88px) 24px 24px;
       border-radius: 16px;
       border: 1px solid rgba(212, 175, 55, 0.5);
       box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
@@ -2284,13 +2296,21 @@
       /* Footer: grow to content, reflow head + bottom to columns */
       footer {
         height: auto;
-        min-height: calc(100svh - 2 * var(--gutter));
-        margin: calc(-6vh + 2.88px) var(--gutter) var(--gutter);
-        padding: 1.5rem var(--gutter) 2rem;
-        /* flex column so .footer-inner can grow to the card's full min-height
-           (an auto-height parent can't resolve the inner's height:100%). */
+        min-height: calc(100svh - 1 * var(--gutter));
+        margin: calc(-6vh + 2.88px) 0 0;
+        padding: 0;
+        /* flex column so .footer-card can grow to fill the stage
+           (an auto-height parent can't resolve a percentage-height child). */
         display: flex;
         flex-direction: column;
+      }
+      .footer-card {
+        flex: 1;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        margin: 0 var(--gutter) var(--gutter);
+        padding: 1.5rem var(--gutter) 2rem;
       }
       /* Centered layout: header group floats in the vertical middle,
          contact block recedes to the very bottom, menu docks below it. */
@@ -2788,41 +2808,43 @@
 
 <!-- ═══════════════ FOOTER ══════════ -->
 <footer data-cursor-state="footer">
-  <div class="footer-bg">
-    <video class="footer-bg-video" autoplay muted loop playsinline>
-      <source src="brand_assets/footbg.mp4" type="video/mp4">
-    </video>
-    <div class="footer-bg-tint"></div>
-    <div class="footer-bg-grain"></div>
-  </div>
-  <div class="footer-inner">
-    <!-- Split header: UNIQUE left · TOUCH right -->
-    <div class="footer-head" id="footerHead">
-      <div class="footer-title-left">
-        <span class="footer-title-word from-left" id="footerWordUnique">UNIQUE</span>
-      </div>
-      <div class="footer-title-right-group">
-        <span class="footer-title-word from-right" id="footerWordTouch">TOUCH</span>
-        <div class="footer-beauty-tag">Beauty Salon</div>
-      </div>
+  <div class="footer-card">
+    <div class="footer-bg">
+      <video class="footer-bg-video" autoplay muted loop playsinline>
+        <source src="brand_assets/footbg.mp4" type="video/mp4">
+      </video>
+      <div class="footer-bg-tint"></div>
+      <div class="footer-bg-grain"></div>
     </div>
-    <div class="footer-head-sub">
-      <div class="footer-top-right">
-        <p class="footer-location">Beauty Salon in the beautiful island of <em>Curaçao</em></p>
+    <div class="footer-inner">
+      <!-- Split header: UNIQUE left · TOUCH right -->
+      <div class="footer-head" id="footerHead">
+        <div class="footer-title-left">
+          <span class="footer-title-word from-left" id="footerWordUnique">UNIQUE</span>
+        </div>
+        <div class="footer-title-right-group">
+          <span class="footer-title-word from-right" id="footerWordTouch">TOUCH</span>
+          <div class="footer-beauty-tag">Beauty Salon</div>
+        </div>
+      </div>
+      <div class="footer-head-sub">
+        <div class="footer-top-right">
+          <p class="footer-location">Beauty Salon in the beautiful island of <em>Curaçao</em></p>
 
-        <div id="footerBookAnchor"></div>
+          <div id="footerBookAnchor"></div>
+        </div>
       </div>
-    </div>
-    <!-- Spacer -->
-    <div class="footer-spacer"></div>
-    <!-- Nav pinned to bottom -->
-    <div class="footer-bottom">
-      <div id="footerMenuAnchor"></div>
-      <div class="footer-contact-col">
-        <p class="footer-col-label">Contact Us</p>
-        <div class="footer-contact">
-          <span>ut.beauty@info.com</span>
-          <span>(+5999) 674 5689</span>
+      <!-- Spacer -->
+      <div class="footer-spacer"></div>
+      <!-- Nav pinned to bottom -->
+      <div class="footer-bottom">
+        <div id="footerMenuAnchor"></div>
+        <div class="footer-contact-col">
+          <p class="footer-col-label">Contact Us</p>
+          <div class="footer-contact">
+            <span>ut.beauty@info.com</span>
+            <span>(+5999) 674 5689</span>
+          </div>
         </div>
       </div>
     </div>
@@ -4026,7 +4048,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Set initial footer offset
     gsap.set(footer, { yPercent: 6 });
 
-    const easeIO = gsap.parseEase('power2.inOut');
+    // Deceleration curve for the footer's landing — fast start, gradual glide to a stop.
+    const easeLand = gsap.parseEase('power3.out');
 
     // Capture button natural positions (x=0, y=0 in transform space)
     function captureNatural() {
@@ -4068,10 +4091,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       prevFooterAnimActive = footerAnimActive;
 
-      const e = easeIO(raw);
+      const e = easeLand(raw);
 
-      // Footer parallax: ease-free (linear with scroll)
-      gsap.set(footer, { yPercent: 6 * (1 - raw) });
+      // Footer parallax: decelerates into its landed position
+      gsap.set(footer, { yPercent: 6 * (1 - e) });
 
       // Once landed at endpoint, hold position — don't re-read live DOM positions
       if (landed) return;
