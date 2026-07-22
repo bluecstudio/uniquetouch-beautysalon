@@ -1810,12 +1810,18 @@
     /* ── FOOTER ──────────────────────────────── */
     /* Opaque full-bleed "stage" — masks #socials behind it for the entire
        scroll-driven yPercent translate, so no transitional gap ever exposes
-       the section underneath (previously the card's own margin was the gap). */
+       the section underneath (previously the card's own margin was the gap).
+       Height is 100vh PLUS a buffer (not "100vh - 24px"): the stage's own
+       height directly sets how much extra scroll room exists past its
+       natural offset, so anything less than a full 100vh leaves a
+       permanent gap at the very end of the page that can never be
+       scrolled away — the buffer also absorbs real-device vh/innerHeight
+       mismatches (mobile browser chrome collapsing, sub-pixel rounding). */
     footer {
       position: relative;
       z-index: 2;
       box-sizing: border-box;
-      height: calc(100vh - 24px);
+      height: calc(100vh + 60px);
       margin: calc(-6vh + 2.88px) 0 0;
       background: var(--bg);
     }
@@ -2296,7 +2302,8 @@
       /* Footer: grow to content, reflow head + bottom to columns */
       footer {
         height: auto;
-        min-height: calc(100svh - 1 * var(--gutter));
+        /* Overshoot buffer, not a subtraction — see desktop rule for why. */
+        min-height: calc(100svh + 60px);
         margin: calc(-6vh + 2.88px) 0 0;
         padding: 0;
         /* flex column so .footer-card can grow to fill the stage
