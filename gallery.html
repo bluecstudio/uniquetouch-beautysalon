@@ -875,22 +875,26 @@
         left: 50%;
         top: 76%;
         transform: translate(-50%, -50%);
-        width: min(80vw, 340px);
+        width: auto;
         margin: 0;
         text-align: center;
         font-family: 'Montserrat', sans-serif;
-        font-style: italic;
-        font-weight: 400;
-        font-size: 1.375rem;
+        font-style: normal;
+        font-weight: 300;
+        font-size: 18px;
         line-height: 1.45;
         letter-spacing: 0.01em;
+        white-space: nowrap;
         color: var(--cream);
         opacity: 0;                 /* JS fades it in after the cards lock */
         visibility: hidden;
         z-index: 5;
         pointer-events: none;
-        text-wrap: balance;
       }
+      /* "worth" carries the medium weight + gold accent circle, matching the
+         header's word-accent treatment (.gi-accent-word/.gi-accent-svg/.gi-accent-text). */
+      .rsg-caption .gi-accent-text { font-weight: 500; }
+      .rsg-caption .gi-accent-svg  { width: 165%; transform: translate(-50%, -50%); }
       .scroll-hint { padding-top: 32px; }
       .gi-page-title { font-size: 2rem; }
       .gi-header { white-space: normal; font-size: 1.5rem; }
@@ -1107,7 +1111,7 @@
     <!-- Statement in the negative space below the arc (mobile only). Fades in
          once the cards lock, then stays put ("sticky") while the section is
          pinned — driven by the pin ScrollTrigger in registerScroll(). -->
-    <p class="rsg-caption" id="rsgCaption" aria-hidden="true">Collection of memories worth&nbsp;sharing</p>
+    <p class="rsg-caption" id="rsgCaption" aria-hidden="true">Collection of memories <span class="gi-accent-word"><img src="brand_assets/header-accent.svg" class="gi-accent-svg" width="122" height="83" aria-hidden="true" alt=""><span class="gi-accent-text">worth</span></span>&nbsp;sharing</p>
   </section>
 
 </main>

@@ -74,7 +74,7 @@
     .menu-btn:hover .menu-btn-icon,
     .menu-btn.is-open .menu-btn-icon { transform: rotate(180deg); }
     .menu-btn-label {
-      font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 500;
+      font-family: 'Montserrat', sans-serif; font-size: 0.875rem; font-weight: 500;
       font-variant: small-caps; letter-spacing: 0.08em; color: var(--white);
       transition: color 0.2s ease; position: relative; width: 2.8em; height: 1em; line-height: 1em;
     }
@@ -214,7 +214,7 @@
       display: flex; align-items: center; gap: 12px; pointer-events: none;
     }
     .counter {
-      font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500;
+      font-family: 'Montserrat', sans-serif; font-size: 0.625rem; font-weight: 500;
       text-transform: uppercase; letter-spacing: 0.25em; color: var(--muted);
       font-variant-numeric: tabular-nums;
     }
@@ -222,7 +222,7 @@
     .counter-rule { height: 1px; width: 32px; background: rgba(244,237,214,0.30); }
     .eyebrow {
       position: absolute; left: 28px; bottom: 30px; z-index: 12; pointer-events: none;
-      font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500;
+      font-family: 'Montserrat', sans-serif; font-size: 0.625rem; font-weight: 500;
       text-transform: uppercase; letter-spacing: 0.34em; color: var(--muted);
     }
 
@@ -259,7 +259,7 @@
     }
     .tr-desc {
       font-family: 'Montserrat', sans-serif; font-weight: 400;
-      letter-spacing: 0.22em; font-size: 12px; line-height: 1.6;
+      letter-spacing: 0.22em; font-size: 0.75rem; line-height: 1.6;
       color: var(--white); margin-left: 3.6em; min-width: 0; opacity: 0;
       will-change: opacity, transform, clip-path;
     }
@@ -279,6 +279,7 @@
     }
     .img-slot-inner {
       position: absolute; inset: 0; overflow: hidden; border-radius: 16px; z-index: 1;
+      background: var(--bg-card);
     }
     .img-slot img, .img-slot video { width: 100%; height: 100%; object-fit: cover; display: block; }
     .img-slot .slot-grad {
@@ -297,7 +298,7 @@
     @keyframes gradient-rotate {
       to { --gradient-angle: 360deg; }
     }
-    .img-slot-wrap.is-current .img-slot::before {
+    .img-slot::before {
       content: '';
       position: absolute; inset: -2px; border-radius: 18px;
       background: conic-gradient(
@@ -312,6 +313,11 @@
       );
       animation: gradient-rotate 10s linear infinite;
       z-index: 0;
+      opacity: 0;
+      transition: opacity 0.4s cubic-bezier(0.22,0.8,0.32,1);
+    }
+    .img-slot-wrap.is-current .img-slot::before {
+      opacity: 1;
     }
 
     /* ── desktop geometry ── */
@@ -347,7 +353,7 @@
       transition: opacity 0.26s ease-out; will-change: transform, opacity;
     }
     #cursorRing span {
-      font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 500;
+      font-family: 'Montserrat', sans-serif; font-size: 0.5625rem; font-weight: 500;
       text-transform: uppercase; letter-spacing: 0.32em; color: #fff;
     }
     @media (hover: none) { #cursorRing { display: none; } }
@@ -366,7 +372,7 @@
       width: calc(40vw - 60px);
       display: flex; flex-direction: column; align-items: center; text-align: center;
       padding: clamp(2rem, 4vw, 4.5rem) clamp(1.75rem, 3.4vw, 4rem);
-      overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+      overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     }
     .detail-content::-webkit-scrollbar { display: none; }
     .detail-content { scrollbar-width: none; }
@@ -375,7 +381,7 @@
 
     .d-eyebrow {
       font-family: 'Montserrat', sans-serif;
-      font-size: 12px; font-weight: 400;
+      font-size: 0.75rem; font-weight: 400;
       letter-spacing: 0.22em;
       color: var(--white); margin-top: 2rem;
     }
@@ -395,12 +401,12 @@
       white-space: nowrap; overflow: hidden;
     }
     .d-intro p:first-child {
-      font-size: 24px; line-height: 1.4;
+      font-size: 1.5rem; line-height: 1.4;
       white-space: normal; overflow: visible;
     }
 
     .d-section-label {
-      font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 600;
+      font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 600;
       text-transform: none; letter-spacing: 0.02em; color: var(--white);
       margin-bottom: 0.9rem;
     }
@@ -410,7 +416,7 @@
     /* treatment chooser */
     .d-chooser { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; }
     .d-chooser-label {
-      font-size: 16px; letter-spacing: 0.02em;
+      font-size: 1rem; letter-spacing: 0.02em;
     }
     .d-chooser-label .lbl-choose { color: var(--gold); }
     .d-pill-wrap {
@@ -422,7 +428,7 @@
       background: var(--bg); border: 1px solid rgba(201,168,76,0.55);
       color: var(--gold); cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      font-family: Georgia, serif; font-style: italic; font-size: 8px; line-height: 1;
+      font-family: Georgia, serif; font-style: italic; font-size: 0.5rem; line-height: 1;
       padding: 0; transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
       opacity: 0; pointer-events: none;
     }
@@ -475,7 +481,7 @@
     .d-pill::after {
       content: ''; position: absolute; inset: 0; border-radius: 100px;
       background: color-mix(in srgb, var(--gold) 15%, var(--bg)); opacity: 0;
-      transition: opacity 0.5s cubic-bezier(0.22,0.8,0.32,1);
+      transition: opacity 0.15s ease;
       z-index: -1; pointer-events: none;
     }
     .d-pill.is-active { border-color: transparent; background: rgba(201,168,76,0.10); }
@@ -513,7 +519,7 @@
       will-change: transform, opacity;
     }
     .d-cell-k {
-      font-family: 'Montserrat', sans-serif; font-size: 9.5px; font-weight: 600;
+      font-family: 'Montserrat', sans-serif; font-size: 0.594rem; font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted); margin-bottom: 0.45rem;
     }
     .d-cell-v {
@@ -614,19 +620,19 @@
         width: 100%; padding: 5.5rem 1.5rem 3rem; gap: 0;
       }
       .d-title { white-space: normal; font-size: 2.86dvh; }
+      .d-intro p { white-space: normal; overflow: visible; }
       .detail-image-frame {
         position: relative; top: auto; right: auto; bottom: auto; left: auto;
         width: 100%; height: auto; aspect-ratio: 4 / 5; margin-bottom: 2.6rem; align-self: stretch;
         flex: none; order: -1;
       }
       .d-grid { grid-template-columns: 1fr 1fr; }
-      .detail-image-frame .btn-ghost { left: 8px; top: 8px; }
+      .detail-image-frame .btn-ghost { left: 0; top: -2.75rem; }
     }
 
     /* ── small phone (≤480) — tighten detail padding & wrap the title split ── */
     @media (max-width: 480px) {
       .detail-content { padding: 5rem var(--gutter) 2.5rem; }
-      .d-grid { grid-template-columns: 1fr; }
       .tr-row { padding: 0 var(--gutter); }
     }
 
@@ -1622,6 +1628,9 @@
     counterCur.textContent = String(requestedIdx + 1).padStart(2, '0');
     skipEntrance();
     requestAnimationFrame(() => requestAnimationFrame(() => openDetail(activeIdx)));
+  } else if (window.__ptActive) {
+    // Arriving under a page-transition overlay: play the entrance as it dissolves.
+    window.addEventListener('pt:enter', runEntrance, { once: true });
   } else {
     runEntrance();
   }
