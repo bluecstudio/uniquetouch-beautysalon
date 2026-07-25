@@ -1815,7 +1815,7 @@
     }
     .social-count-num {
       font-family: 'Cinzel', serif;
-      font-size: 1.0625rem;
+      font-size: 0.875rem;
       font-weight: 500;
       letter-spacing: 0;
       text-transform: none;
@@ -2336,40 +2336,53 @@
       .socials-inner > div:first-child { align-items: center; text-align: center; }
       .socials-title { white-space: normal; margin-bottom: 1rem; }
       .socials-desc { white-space: normal; margin-left: auto; margin-right: auto; }
-      .social-row { justify-content: center; }
+      /* Narrow phones don't have the desktop row's spare width — the "20K+"
+         pill + all 3 social icons need to shave enough off to stay on one
+         line instead of wrapping the last icon down (which pushed the whole
+         footer ~330px lower). Tighten gaps/tracking rather than the icons
+         themselves. */
+      .social-row { justify-content: center; gap: 0.375rem; }
+      .social-count { padding: 0.3rem 0.5rem; letter-spacing: 0.04em; gap: 0.3rem; }
+      .social-count-num { font-size: 0.625rem; }
+      .social-pill { width: 2rem; height: 2rem; }
       .socials-btn { align-self: center; }
       /* Crop the gif's ~25% transparent top band so the figure sits close to the
          button — keeps the visual gap below the button smaller than above the header. */
       .gif-wrap { align-self: center; justify-self: center; margin-top: -22vw; }
       .gif-wrap img { margin-inline: auto; }
 
-      /* Footer: grow to content, reflow head + bottom to columns */
+      /* Footer: capped to one screen height (like #hero's fixed-height card,
+         ~L321-334) — content is trimmed to fit rather than the stage growing
+         to fit content, so the gold border/glow "island" never stretches. */
       footer {
-        height: auto;
-        /* Overshoot buffer, not a subtraction — see desktop rule for why. */
-        min-height: calc(100svh + 60px);
+        /* Fixed, not min-height — same overshoot-buffer formula as the
+           desktop rule (see comment there), now a hard cap instead of a
+           floor. Preserves the same total scroll length, so the "never
+           permanently exposes #socials" invariant still holds. */
+        height: calc(100svh + 60px);
         margin: calc(-6vh + 2.88px) 0 0;
         padding: 0;
-        /* flex column so .footer-card can grow to fill the stage
-           (an auto-height parent can't resolve a percentage-height child). */
         display: flex;
         flex-direction: column;
       }
       .footer-card {
-        flex: 1;
-        height: auto;
+        /* NOT bare 100% — must subtract the card's own bottom margin
+           (mirrors desktop's calc(100% - 24px)), or the margin adds on top
+           of a now-fixed box and reintroduces overflow past the cap. */
+        height: calc(100% - var(--gutter));
         display: flex;
         flex-direction: column;
         margin: 0 var(--gutter) var(--gutter);
         padding: 1.5rem var(--gutter) 2rem;
+        /* overflow:hidden already inherited from the desktop rule. */
       }
       /* Centered layout: header group floats in the vertical middle,
-         contact block recedes to the very bottom, menu docks below it. */
-      .footer-inner { flex: 1; text-align: center; align-items: center; }
-      /* margin-top:auto on .footer-head absorbs ~all leftover space (the
-         fixed 6vh below on .footer-head-sub is no longer flexible), pushing
-         the block noticeably lower — most empty space collects above it. */
-      .footer-head { margin-top: auto; flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
+         contact block recedes to the very bottom, menu docks below it.
+         justify-content:space-between distributes the fixed-height box's
+         leftover space — unlike margin:auto, it can't overflow (shrinks
+         toward 0 instead of pushing the box taller). */
+      .footer-inner { flex: 1; text-align: center; align-items: center; justify-content: space-between; }
+      .footer-head { flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
       /* display:contents flattens this group so Beauty Salon / TOUCH become
          direct flex children of .footer-head, reorderable like the hero
          (.hero-title-right at ~L1984) — Beauty Salon stacks above UNIQUE. */
@@ -2383,7 +2396,7 @@
       .footer-title-word, .footer-beauty-tag { display: none; }
       /* Curaçao tagline removed on mobile — keeps the header block clean. */
       .footer-location { display: none; }
-      .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; margin-bottom: 6vh; }
+      .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; }
       .footer-spacer { display: none; }
       .footer-top-right { text-align: center; margin-left: 0; }
       /* Dock centering: the scroll-dock lands the Book button at its anchor's
@@ -2925,6 +2938,14 @@ function setNavVisibility(visible) {
   navShown = visible;
   gsap.to([menuBtn, bookBtn], {
     autoAlpha: visible ? 1 : 0,
+    // Whenever this handler is the one making buttons visible, normalize
+    // their transform too — closes a race with the footer-dock hand-back
+    // (see footer parallax script) where reversing scroll direction mid
+    // fade-out could otherwise leave a button visible but still offset at
+    // its old footer-anchor position. undefined on the hide branch is a
+    // GSAP no-op, so hide behavior is unchanged.
+    x: visible ? 0 : undefined,
+    y: visible ? 0 : undefined,
     duration: 0.25,
     ease: 'power2.inOut',
     overwrite: 'auto', // still needed when direction flips mid-fade
@@ -3722,6 +3743,17 @@ document.addEventListener("DOMContentLoaded", () => {
       hero.style.visibility = 'visible';
       hero.style.opacity    = '1';
 
+      // Correct the mis-measured #services pin now, before the overlay fade
+      // below runs — this previously only happened in releaseScrollLock() at
+      // this timeline's onComplete, but the preloader overlay (tl.to below)
+      // starts fading out well before that, at z-index 1000 above #services'
+      // z-index 11. If #services is still stuck mis-pinned (position:fixed,
+      // transparent, on top of the hero) when the overlay becomes see-through,
+      // the card stack flashes into view over the hero until onComplete
+      // finally un-sticks it. Fixing it here closes that window entirely.
+      if (typeof initServicesReveal === 'function') initServicesReveal();
+      ScrollTrigger.refresh();
+
       // Capture preloader word positions (viewport-relative)
       const uRect = plUnique.getBoundingClientRect();
       const tRect = plTouch.getBoundingClientRect();
@@ -3840,13 +3872,31 @@ document.addEventListener("DOMContentLoaded", () => {
         _lastW = window.innerWidth;
         if (typeof svcComputeLayout === 'function') { svcComputeLayout(); svcInit(); }
         // Carousel DOM was just rebuilt — re-bind the scrubbed reveal to the new
-        // .card-reveal nodes before refreshing measurements.
-        if (typeof initServicesReveal === 'function') initServicesReveal();
-        ScrollTrigger.refresh();
+        // .card-reveal nodes before refreshing measurements. Guarded the same
+        // way as the late-event listeners below (visibilitychange etc.) since
+        // an orientation change can happen at any scroll position, not just
+        // near the top of the page.
+        if (typeof reviveServicesReveal === 'function') reviveServicesReveal();
+        else ScrollTrigger.refresh();
       }, 180);
     }
     window.addEventListener('resize', _onViewportChange);
     window.addEventListener('orientationchange', _onViewportChange);
+
+    // The CSS floor (min-height:680px, lifted only via a `max-height:679px`
+    // media query) gates on the browser's large/layout viewport, not the
+    // small one `100svh` targets — so on a device where the large viewport
+    // is >=680 but the real visible area (toolbar showing) is shorter, the
+    // floor still wins and pushes the badge/CTAs below the fold. Redo the
+    // same floor here against the real, currently-visible window.innerHeight
+    // (which mobile browsers do update live as the toolbar collapses/expands)
+    // so the hero can never be taller than what's actually on screen.
+    function syncHeroMinHeight() {
+      hero.style.minHeight = (window.innerHeight < 680 ? window.innerHeight : 680) + 'px';
+    }
+    syncHeroMinHeight();
+    window.addEventListener('resize', syncHeroMinHeight);
+    window.addEventListener('orientationchange', syncHeroMinHeight);
 
     // Compute badge center relative to hsStage — eliminates calc() approximation bugs
     function getBadgeCenter() {
@@ -4145,6 +4195,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Deceleration curve for the footer's landing — fast start, gradual glide to a stop.
     const easeLand = gsap.parseEase('power3.out');
 
+    // Contact info fades in only after the nav buttons finish docking —
+    // hidden up front so there's no flash before the trigger fires.
+    const contactCol = document.querySelector('.footer-contact-col');
+    if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
+    let contactRevealed = false;
+
     // Capture button natural positions (x=0, y=0 in transform space)
     function captureNatural() {
       gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
@@ -4161,6 +4217,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let raf = 0;
     let prevFooterAnimActive = false;
     let landed = false;
+    // True once the buttons have fully landed + revealed. While true, the
+    // whole footer+button system (parallax, opacity, position) holds fixed
+    // regardless of scroll — buttons only fly back once the footer genuinely
+    // leaves the viewport (footerAnimActive goes false), not just because the
+    // user scrolled up a little within the footer zone.
+    let docked = false;
 
     function tick() {
       raf = 0;
@@ -4174,10 +4236,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (Math.abs(raw - lastRaw) < 0.00005) return;
       lastRaw = raw;
 
-      // Unfreeze when user scrolls back up
-      if (raw < 1) landed = false;
+      // Unfreeze the position-lock on scroll-up — but not while docked,
+      // since docked means "hold everything" regardless of raw moving down.
+      if (raw < 1 && !docked) landed = false;
 
       footerAnimActive = raw > 0.02;
+
+      const enteringZone = footerAnimActive && !prevFooterAnimActive;
+      const leavingZone  = !footerAnimActive && prevFooterAnimActive;
 
       // The buttons fly from their nav position to the footer anchors across
       // this whole scroll range, passing directly over #socials (which stays
@@ -4185,11 +4251,42 @@ document.addEventListener("DOMContentLoaded", () => {
       // non-interactive while in transit — visible + clickable only once
       // they're locked into their final footer position — instead of forcing
       // them fully visible/clickable the instant the flight starts.
-      if (footerAnimActive && !prevFooterAnimActive) {
+      if (enteringZone) {
+        docked = false;
         navShown = false;
+        gsap.killTweensOf([menuBtnEl, bookBtnEl]);
         gsap.set([menuBtnEl, bookBtnEl], { autoAlpha: 0, pointerEvents: 'none' });
       }
+
+      if (leavingZone) {
+        // Footer has genuinely scrolled out of view — hand control back to
+        // the plain nav scroll handler. Fade out first, and only once fully
+        // invisible snap x/y back to the natural nav position, so there's
+        // never a visible jump.
+        docked = false;
+        landed = false;
+        navShown = false;
+        gsap.killTweensOf([menuBtnEl, bookBtnEl]);
+        gsap.set([menuBtnEl, bookBtnEl], { pointerEvents: 'none' });
+        gsap.to([menuBtnEl, bookBtnEl], {
+          autoAlpha: 0,
+          duration: 0.25,
+          ease: 'power2.inOut',
+          onComplete: function () {
+            gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
+          },
+        });
+        contactRevealed = false;
+        if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
+      }
+
       prevFooterAnimActive = footerAnimActive;
+
+      // Docked hold: footer is fully flush and buttons are fully visible +
+      // pinned at their anchors — freeze the footer's own parallax too, so
+      // buttons never detach from their anchors while the user scrolls
+      // around inside the footer zone.
+      if (docked) return;
 
       const e = easeLand(raw);
 
@@ -4207,6 +4304,13 @@ document.addEventListener("DOMContentLoaded", () => {
           autoAlpha: reveal,
           pointerEvents: raw >= 1 ? 'auto' : 'none',
         });
+        if (raw >= 1) {
+          docked = true;
+          if (!contactRevealed && contactCol) {
+            contactRevealed = true;
+            gsap.to(contactCol, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.15 });
+          }
+        }
       }
 
       // Once landed at endpoint, hold position — don't re-read live DOM positions
@@ -4243,6 +4347,7 @@ document.addEventListener("DOMContentLoaded", () => {
       nat = captureNatural();
       lastRaw = -1;
       landed = false;
+      docked = false;
       tick();
     });
 
@@ -4290,7 +4395,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // #services is handled by initServicesReveal() (pinned + scrubbed assemble)
     ["#courses",  [".courses-title", ".courses-tagline", ".courses-desc", ".courses-desc-2"]],
     ["#socials",  [".socials-title", ".socials-desc"]],
-    ["footer",    [".footer-location", ".footer-col-label"]],
+    ["footer",    [".footer-location"]],
   ];
 
   function collectEls(sectionSel, selectors) {
@@ -4398,19 +4503,22 @@ function initServicesReveal() {
       trigger: '#services',
       start: 'top top',
       end: () => '+=' + window.innerHeight,   // one viewport of scrub distance
-      scrub: 0.35,                            // short lag — settles quickly right at
-                                               // the hero hand-off boundary; reverses on scroll-up
+      scrub: 1,                               // premium lag — lets the still-darkened
+                                               // video read through before the backdrop
+                                               // fully commits; reverses on scroll-up
       pin: true,
       pinSpacing: true,
       anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
       invalidateOnRefresh: true,
       // Interactive only while pinned; non-interactive while it's the
       // transparent overlay above the hero (so the hero stays clickable).
-      // Also force the backdrop fully opaque the instant the pin engages —
-      // its own scrub(0.35) tween can still be mid-fade on a fast scroll
-      // (mirrors the same fix on the hero's onLeave above), which would
-      // otherwise let the still-live video peek through the gap for a frame.
-      onEnter:     () => gsap.set('#services', { pointerEvents: 'auto', backgroundColor: '#0A0906' }),
+      // Backdrop opacity is left to the scrubbed tween below — the hero's
+      // own onLeave (above) already forces vrDarken/vmFadeOut fully opaque
+      // the instant its pin releases, so what shows through this overlay
+      // during the handoff is always the already-darkened video, never a
+      // live/undarkened frame. Snapping backgroundColor here too would just
+      // remove the intentional video-blend read-through.
+      onEnter:     () => gsap.set('#services', { pointerEvents: 'auto' }),
       onEnterBack: () => gsap.set('#services', { pointerEvents: 'auto' }),
       onLeaveBack: () => gsap.set('#services', { pointerEvents: 'none' }),
     },
@@ -4440,39 +4548,46 @@ if (typeof ScrollTrigger !== 'undefined') {
   });
 }
 
+// The corrective kill-and-recreate above is only safe while the hero pin is
+// still active — i.e. scrollY hasn't yet reached the point where #services
+// engages. Verified live: calling initServicesReveal() again after the user
+// has already scrolled past that point (mid-services, or anywhere further
+// down the page) corrupts the pin — position:fixed drops to relative, the
+// backdrop snaps to fully opaque, and everything below #services in the
+// document shifts by up to a viewport's worth of scroll offset. That's
+// exactly the flash/jump a visitor sees if visibilitychange, pageshow,
+// fonts.ready, or a late load event fires after they've already scrolled or
+// reversed direction. Past that point a plain refresh() is enough to correct
+// any measurement drift without touching the already-correct pinned state.
+function reviveServicesReveal() {
+  const heroEnd = window.innerHeight * 4.5;
+  if (window.scrollY < heroEnd - 100) initServicesReveal();
+  ScrollTrigger.refresh();
+}
+
 // Build it now (cards + gsap already exist synchronously), and rebuild after
 // load — the load handler above may re-run svcInit() and replace the card DOM.
 initServicesReveal();
 window.addEventListener('load', function () {
-  requestAnimationFrame(function () {
-    initServicesReveal();
-    ScrollTrigger.refresh();
-  });
+  requestAnimationFrame(reviveServicesReveal);
 });
 
 // Same mis-pin race as above can resurface with no resize/load event at all:
 // a backgrounded mobile tab resumed after being idle, or a bfcache
 // back/forward restore (neither fires DOMContentLoaded/load again), or a
 // late web-font swap shifting layout after the corrective calls above already
-// ran. Re-run the same kill-and-recreate fix at each of those points too.
+// ran. Re-run the same guarded fix at each of those points too.
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible') {
-    requestAnimationFrame(function () {
-      initServicesReveal();
-      ScrollTrigger.refresh();
-    });
+    requestAnimationFrame(reviveServicesReveal);
   }
 });
 window.addEventListener('pageshow', function (e) {
   if (!e.persisted) return;
-  initServicesReveal();
-  ScrollTrigger.refresh();
+  reviveServicesReveal();
 });
 if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(function () {
-    initServicesReveal();
-    ScrollTrigger.refresh();
-  });
+  document.fonts.ready.then(reviveServicesReveal);
 }
 </script>
 

@@ -257,7 +257,10 @@
     }
     .btn-ghost:hover .btn-label { transform: translateX(0); }
 
-    .word-swap { display: inline-grid; vertical-align: bottom; }
+    /* baseline (not bottom): the hidden Cinzel span makes the grid box taller
+       than the Montserrat line, so bottom-aligning pushed the visible word
+       above the baseline of the text next to it (visible on mobile CTAs). */
+    .word-swap { display: inline-grid; vertical-align: baseline; align-items: baseline; }
     .word-swap-mono, .word-swap-cinzel { grid-area: 1 / 1; }
     .word-swap-mono { transition: opacity 0.35s cubic-bezier(0.33, 1, 0.68, 1); }
     .word-swap-cinzel {
@@ -835,7 +838,9 @@
 
     /* ═══════════════ MOBILE / RESPONSIVE ═══════════════ */
     @media (max-width: 767px) {
-      #menuBtn { top: 22px; left: 22px; }
+      /* Menu gets the same 2.25rem box as the Book pill so their contents
+         share one vertical center line. */
+      #menuBtn { top: 22px; left: 22px; height: 2.25rem; }
       #bookBtn { top: 22px; right: 22px; }
       #gallery-intro {
         min-height: calc(100vh - 320px);
@@ -910,24 +915,25 @@
       .lb-caption { top: -5rem; right: 0; }
       .lb-caption-title { font-size: 1.125rem; }
       .lb-caption-desc { font-size: 0.75rem; padding: 0 1rem; }
-      /* Footer: grow to content, reflow head + bottom to columns */
+      /* Footer: capped to one screen height (fixed, not min-height) so the
+         border/glow card can't grow taller than one screen — mirrors the
+         desktop rule's fixed-height pattern (100vh - 48px), just swapping
+         100vh→100svh. overflow:hidden is already inherited from the base
+         rule as a safety clip. display:flex/flex-direction is no longer
+         needed for sizing now that height is determinate again —
+         .footer-inner's own base rule (height:100%) resolves correctly
+         against a real fixed-height parent without the flex workaround. */
       footer {
-        height: auto;
-        min-height: calc(100svh - 2 * var(--gutter));
+        height: calc(100svh - 2 * var(--gutter));
         margin: calc(-6vh + 2.88px) var(--gutter) var(--gutter);
         padding: 1.5rem var(--gutter) 2rem;
-        /* flex column so .footer-inner can grow to the card's full min-height
-           (an auto-height parent can't resolve the inner's height:100%). */
-        display: flex;
-        flex-direction: column;
       }
       /* Centered layout: header group floats in the vertical middle,
-         contact block recedes to the very bottom, menu docks below it. */
-      .footer-inner { flex: 1; text-align: center; align-items: center; }
-      /* margin-top:auto on .footer-head absorbs ~all leftover space (the
-         fixed 6vh below on .footer-head-sub is no longer flexible), pushing
-         the block noticeably lower — most empty space collects above it. */
-      .footer-head { margin-top: auto; flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
+         contact block recedes to the very bottom, menu docks below it.
+         justify-content:space-between distributes leftover space without
+         risking overflow (unlike margin:auto on a now-fixed-height box). */
+      .footer-inner { text-align: center; align-items: center; justify-content: space-between; }
+      .footer-head { flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
       /* display:contents flattens this group so Beauty Salon / TOUCH become
          direct flex children of .footer-head, reorderable like the hero. */
       .footer-title-right-group { display: contents; }
@@ -940,7 +946,7 @@
       .footer-title-word, .footer-beauty-tag { display: none; }
       /* Curaçao tagline removed on mobile — keeps the header block clean. */
       .footer-location { display: none; }
-      .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; margin-bottom: 6vh; }
+      .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; }
       .footer-spacer { display: none; }
       .footer-top-right { text-align: center; margin-left: 0; }
       /* Dock centering: the scroll-dock lands the Book button at its anchor's
@@ -965,14 +971,9 @@
     /* ── small phone (≤480) ── */
     @media (max-width: 480px) {
       .gi-header { font-size: 1.3rem; }
-      /* Book FAB collapses to an arrow-only circle so it never crowds Menu */
-      #bookBtn { width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 50%; }
-      #bookBtn .btn-label { display: none; }
-      #bookBtn .btn-arrow { position: static; left: auto; transform: none; }
-      #bookBtn:hover .btn-arrow { left: auto; }
-      /* Match the footer Book anchor to the collapsed FAB width so the docked
-         button stays centered (see the 767px rule for the pill width). */
-      #footerBookAnchor { width: 2.5rem; }
+      /* Book pill keeps its label (matches desktop); just tighten it slightly
+         so Menu + pill clear each other down to 320px-wide screens. */
+      #bookBtn { padding: 10px 16px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1211,13 +1212,19 @@ let lastScrollY = window.scrollY;
 let menuOpenScrollY = null;
 let footerAnimActive = false;
 
+let navShown = true; // buttons start visible
 function setNavVisibility(visible) {
-  if (typeof gsap === 'undefined') return;
+  // State guard: the scroll handler calls this every scroll event, and with
+  // normalizeScroll driving touch scrolling from rAF that's every frame —
+  // each redundant gsap.to restarted the 0.25s fade from its current
+  // progress, so it never completed crisply. Only tween on an actual flip.
+  if (typeof gsap === 'undefined' || visible === navShown) return;
+  navShown = visible;
   gsap.to([menuBtn, bookBtn], {
     autoAlpha: visible ? 1 : 0,
     duration: 0.25,
     ease: 'power2.inOut',
-    overwrite: 'auto',
+    overwrite: 'auto', // still needed when direction flips mid-fade
   });
 }
 
@@ -1701,7 +1708,8 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
 
     gsap.set(footer, { yPercent: 6 });
 
-    const easeIO = gsap.parseEase('power2.inOut');
+    // Deceleration curve for the footer's landing — fast start, gradual glide to a stop.
+    const easeLand = gsap.parseEase('power3.out');
 
     function captureNatural() {
       gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
@@ -1717,6 +1725,7 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     let lastRaw = -1;
     let raf = 0;
     let prevFooterAnimActive = false;
+    let landed = false;
 
     function tick() {
       raf = 0;
@@ -1729,16 +1738,43 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       if (Math.abs(raw - lastRaw) < 0.00005) return;
       lastRaw = raw;
 
+      // Unfreeze when user scrolls back up
+      if (raw < 1) landed = false;
+
       footerAnimActive = raw > 0.02;
 
+      // The buttons fly from their nav position to the footer anchors across
+      // this whole scroll range, passing directly over #socials (which stays
+      // sticky-visible mid-viewport the entire time). Keep them hidden and
+      // non-interactive while in transit — visible + clickable only once
+      // they're locked into their final footer position — instead of forcing
+      // them fully visible/clickable the instant the flight starts.
       if (footerAnimActive && !prevFooterAnimActive) {
-        setNavVisibility(true);
+        navShown = false;
+        gsap.set([menuBtnEl, bookBtnEl], { autoAlpha: 0, pointerEvents: 'none' });
       }
       prevFooterAnimActive = footerAnimActive;
 
-      const e = easeIO(raw);
+      const e = easeLand(raw);
 
-      gsap.set(footer, { yPercent: 6 * (1 - raw) });
+      // Footer parallax: decelerates into its landed position
+      gsap.set(footer, { yPercent: 6 * (1 - e) });
+
+      // Fade the buttons back in only in the final stretch of the flight, so
+      // they appear right as they settle into the footer anchors rather than
+      // being visible for the whole trip across #socials.
+      if (footerAnimActive) {
+        const REVEAL_START = 0.9;
+        const reveal = raw <= REVEAL_START ? 0 : (raw - REVEAL_START) / (1 - REVEAL_START);
+        navShown = reveal > 0;
+        gsap.set([menuBtnEl, bookBtnEl], {
+          autoAlpha: reveal,
+          pointerEvents: raw >= 1 ? 'auto' : 'none',
+        });
+      }
+
+      // Once landed at endpoint, hold position — don't re-read live DOM positions
+      if (landed) return;
 
       const mA = menuAnc.getBoundingClientRect();
       const bA = bookAnc.getBoundingClientRect();
@@ -1752,6 +1788,9 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
 
       gsap.set(menuBtnEl, { x: (mA.left - nat.mx) * e, y: (menuTargetY - nat.my) * e });
       gsap.set(bookBtnEl, { x: (bookTargetX - nat.bx) * e, y: (bookTargetY - nat.by) * e });
+
+      // Freeze once fully landed
+      if (raw >= 1) landed = true;
     }
 
     function onScroll() {
@@ -1759,11 +1798,13 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    // scrollend fires after momentum settles — ensures final position is snapped cleanly
     window.addEventListener('scrollend', function () { lastRaw = -1; tick(); }, { passive: true });
 
     window.addEventListener('resize', function () {
       nat = captureNatural();
       lastRaw = -1;
+      landed = false;
       tick();
     });
 
