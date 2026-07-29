@@ -987,11 +987,15 @@
     .svc-card::before {
       transition: transform 0.4s cubic-bezier(0.22,0.8,0.32,1);
     }
-    .svc-card.is-center:hover .card-inner,
-    .svc-card.is-center:hover::before,
     .svc-card.is-center:focus-within .card-inner,
     .svc-card.is-center:focus-within::before {
       transform: translateY(-8px);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .svc-card.is-center:hover .card-inner,
+      .svc-card.is-center:hover::before {
+        transform: translateY(-8px);
+      }
     }
     @media (prefers-reduced-motion: reduce) {
       .svc-card .card-inner,
@@ -1322,8 +1326,8 @@
          a full-coverage dark overlay instead of the desktop left-only fade. */
       .reviews-right::after {
         background: linear-gradient(180deg,
-          rgba(10,9,6,0.55) 0%,
-          rgba(10,9,6,0.78) 100%);
+          rgba(10,9,6,0.32) 0%,
+          rgba(10,9,6,0.55) 100%);
       }
       .rfg-card { max-width: 220px; }
     }
@@ -2938,6 +2942,13 @@ function setNavVisibility(visible) {
   navShown = visible;
   gsap.to([menuBtn, bookBtn], {
     autoAlpha: visible ? 1 : 0,
+    // Keep clickability in lockstep with visibility — the footer-dock
+    // script (see footer parallax script) sets pointer-events:'none' on
+    // these buttons while docking and only ever restores 'auto' once the
+    // footer fully lands. If the user scrolls back up before that, control
+    // returns here with the buttons stuck unclickable despite looking
+    // normal. Setting it here every time we go visible self-heals that.
+    pointerEvents: visible ? 'auto' : 'none',
     // Whenever this handler is the one making buttons visible, normalize
     // their transform too — closes a race with the footer-dock hand-back
     // (see footer parallax script) where reversing scroll direction mid
