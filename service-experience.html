@@ -593,9 +593,8 @@
 
     /* detail image (right anchor) — pinned to viewport on desktop, in-flow on mobile */
     .detail-image-frame {
-      position: fixed; top: 30px; right: 30px; left: auto;
+      position: fixed; top: 30px; right: 30px; bottom: 30px; left: auto;
       width: 60vw;
-      height: 60vh;
       z-index: 1;
     }
     .detail-image {
@@ -609,7 +608,7 @@
       background: linear-gradient(to top, rgba(10,9,6,0.42) 0%, rgba(10,9,6,0.04) 38%, transparent 70%);
     }
     .detail-image-frame .btn-ghost {
-      position: absolute; top: 16px; left: 16px; z-index: 2;
+      position: fixed; top: calc(36px + 0.875rem); left: calc(24px + 1.75rem); z-index: 5;
     }
 
     [data-detail-reveal] { will-change: transform, opacity, filter; }
@@ -627,7 +626,7 @@
         flex: none; order: -1;
       }
       .d-grid { grid-template-columns: 1fr 1fr; }
-      .detail-image-frame .btn-ghost { left: 0; top: -2.75rem; }
+      .detail-image-frame .btn-ghost { position: absolute; left: 0; top: -2.75rem; }
     }
 
     /* ── small phone (≤480) — tighten detail padding & wrap the title split ── */

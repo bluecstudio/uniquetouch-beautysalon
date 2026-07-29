@@ -4476,8 +4476,7 @@ document.addEventListener("DOMContentLoaded", () => {
    the hero's scroll-out so the video-expansion fade-to-black hands off to
    the services background with no gap. No entrance choreography — header,
    showcase pill, and cards are all visible at their resting state from the
-   moment the section is built; only the pin/overlap/background-fade timing
-   below is scrubbed. */
+   moment the section is built; only the pin/overlap timing below is scrubbed. */
 var _svcRevealST = null;
 function initServicesReveal() {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
@@ -4491,33 +4490,24 @@ function initServicesReveal() {
   }
 
   // Overlap the hero's scroll-out: pull #services up one viewport so it reaches
-  // the top exactly as the hero pin releases, paint it above the hero, and start
-  // it transparent so the still-animating video shows through during the brief
-  // overlap. The bg fades in as the pin engages — no dark gap.
-  // pointerEvents:none while transparent so it doesn't swallow clicks meant for
+  // the top exactly as the hero pin releases, paint it above the hero, already
+  // opaque — a solid cover, no read-through of the still-animating hero layer.
+  // pointerEvents:none until pinned so it doesn't swallow clicks meant for
   // the hero (e.g. the mute button) underneath; restored when the pin engages.
-  gsap.set('#services', { marginTop: -window.innerHeight, zIndex: 11, backgroundColor: 'rgba(10,9,6,0)', pointerEvents: 'none' });
+  gsap.set('#services', { marginTop: -window.innerHeight, zIndex: 11, backgroundColor: '#0A0906', pointerEvents: 'none' });
 
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: '#services',
       start: 'top top',
       end: () => '+=' + window.innerHeight,   // one viewport of scrub distance
-      scrub: 1,                               // premium lag — lets the still-darkened
-                                               // video read through before the backdrop
-                                               // fully commits; reverses on scroll-up
+      scrub: 1,                               // premium lag on the pin/pointer handoff
       pin: true,
       pinSpacing: true,
       anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
       invalidateOnRefresh: true,
       // Interactive only while pinned; non-interactive while it's the
-      // transparent overlay above the hero (so the hero stays clickable).
-      // Backdrop opacity is left to the scrubbed tween below — the hero's
-      // own onLeave (above) already forces vrDarken/vmFadeOut fully opaque
-      // the instant its pin releases, so what shows through this overlay
-      // during the handoff is always the already-darkened video, never a
-      // live/undarkened frame. Snapping backgroundColor here too would just
-      // remove the intentional video-blend read-through.
+      // opaque overlay above the hero (so the hero stays clickable underneath).
       onEnter:     () => gsap.set('#services', { pointerEvents: 'auto' }),
       onEnterBack: () => gsap.set('#services', { pointerEvents: 'auto' }),
       onLeaveBack: () => gsap.set('#services', { pointerEvents: 'none' }),
@@ -4530,9 +4520,6 @@ function initServicesReveal() {
   // positions include this pin's spacer (otherwise they fire 1 viewport early).
   ScrollTrigger.sort();
 
-  // The instant it pins, fade the warm-black backdrop in (matches the hero's
-  // fadeout) so the section emerges from --bg rather than the live video.
-  tl.to('#services', { backgroundColor: '#0A0906', ease: 'none', duration: 0.06 }, 0.00);
 }
 
 // The -1-viewport overlap above is a one-time gsap.set, but on phones the
