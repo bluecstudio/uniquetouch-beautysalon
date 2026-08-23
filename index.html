@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="format-detection" content="telephone=no">
-  <title>Unique Touch Beauty Salon — Curaçao</title>
+  <title>Unique Touch Beauty Salon — Book Your Moment</title>
   <link rel="icon" type="image/png" href="brand_assets/favicon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,6 +116,21 @@
       /* Drop behind .menu-backdrop (198) and .menu-panel (199) so it recedes into the
          dimmed background instead of shining through on top of the panel's text
          wherever the fully-open panel overlaps its position (routine in the footer). */
+      z-index: 150;
+      transition: filter 0.3s ease, opacity 0.3s ease;
+    }
+    /* Same treatment for the static footer Book button — #bookBtn itself is
+       always hidden while in the footer zone now (see footer parallax
+       script), so this is the one actually visible/overlappable by the
+       panel when the menu is opened from the footer. `~ footer #...` reaches
+       it since <footer> is a body-level sibling of .menu-backdrop. Both
+       filter AND opacity need !important here (unlike #bookBtn above): the
+       footer button's own warp-in/out tweens (see footer parallax script)
+       set an inline `filter` too, not just opacity, which otherwise wins. */
+    .menu-backdrop.is-open ~ footer #footerBookBtn {
+      filter: blur(4px) !important;
+      opacity: 0.35 !important;
+      pointer-events: none;
       z-index: 150;
       transition: filter 0.3s ease, opacity 0.3s ease;
     }
@@ -310,13 +325,16 @@
       margin-top: 16px;
     }
     .menu-social-link {
-      color: var(--white);
+      width: 2.125rem; height: 2.125rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.55);
       text-decoration: none;
-      display: flex;
-      align-items: center;
-      transition: color 0.25s ease;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
-    .menu-social-link:hover { color: var(--gold); }
+    .menu-social-link:hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); border-color: var(--gold); }
     /* ── HERO ────────────────────────────────── */
     #hero {
       position: relative;
@@ -331,6 +349,7 @@
        make the pin taller than the screen, clipping the badge and CTAs). */
     @media (max-height: 679px) {
       #hero { min-height: 100svh; }
+      #courses { height: auto; min-height: 100svh; }
     }
     .hs-stage {
       position: relative;
@@ -527,13 +546,24 @@
 
     /* ── VIDEO REVEAL SECTION ───────────────── */
     /* ── VIDEO MORPH (single unified element) ── */
-    .vm-wrap {
+    .vm-mask {
       position: absolute;
-      inset: 0;
+      border-radius: 50%;
+      overflow: hidden; /* static clip shape — rasterized once, not per frame */
       z-index: 3;
-      /* clip-path initial value set by JS initPos() using getBoundingClientRect() */
       pointer-events: none;
       opacity: 0; /* hidden at rest — badge video (.vb-media) handles display; revealed by GSAP on scroll */
+      will-change: transform, opacity;
+      /* left/top/width/height/scale set by JS (updateBadgePos()/initPos()) */
+    }
+    .vm-wrap {
+      position: absolute;
+      /* left/top/width/height/transform-origin set by JS (updateBadgePos()) to
+         exactly fill #hsStage while counter-scaling #vmMask's scale every frame,
+         so the video content never visually distorts — only the circular
+         aperture (#vmMask) grows. */
+      pointer-events: none;
+      will-change: transform;
     }
     .vm-wrap video {
       width: 100%; height: 100%;
@@ -805,7 +835,7 @@
     .btn-dark .btn-label, .btn-dark .btn-arrow { position: relative; z-index: 1; }
 
     /* ── SERVICES ────────────────────────────── */
-    #services { background: var(--bg); padding-top: 4rem; padding-bottom: 4rem; position: relative; z-index: 1; }
+    #services { background: transparent; padding-top: 1rem; padding-bottom: 4rem; position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; min-height: 100svh; }
 
     .svc-section-header {
       padding: 3rem 2.75rem 3rem;
@@ -866,9 +896,17 @@
     .showcase-pill {
       display: inline-block;
       text-align: center;
-      padding-bottom: 4px;
-      border-bottom: 2px solid var(--gold);
+      padding-bottom: 6px;
       position: relative;
+    }
+    .showcase-underline {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 2px;
+      background: var(--gold);
+      transform-origin: center;
+      transform: scaleX(1);
+      pointer-events: none;
     }
     .showcase-name {
       font-family: 'Montserrat', sans-serif;
@@ -909,6 +947,23 @@
     }
     .carousel-shell:active { cursor: grabbing; }
 
+    /* Bottom-up warp-in entrance (scale+blur+y+opacity), scrubbed by
+       initServicesReveal()'s `tl` during the HOLD phase. Initial hidden state
+       lives in CSS so there's no flash of fully-visible content before GSAP
+       takes over. .svc-reviews-tease is deliberately excluded — it has its
+       own separate one-shot entrance (see playServicesCTA()). Skipped under
+       reduced-motion so content shows immediately at rest. */
+    @media (prefers-reduced-motion: no-preference) {
+      .svc-section-header,
+      .showcase-row,
+      .carousel-shell {
+        opacity: 0;
+        transform: translateY(72px) scale(0.9);
+        filter: blur(16px);
+        will-change: transform, opacity, filter;
+      }
+    }
+
     /* Gradient border animation */
     @property --gradient-angle {
       syntax: '<angle>';
@@ -933,6 +988,16 @@
       border-radius: 20px;
       overflow: hidden;
       z-index: 1;
+    }
+    /* Side cards get no gradient ring (center-only, see .is-center::before
+       below) — soften their edge into the page background so they read as
+       floating rather than as hard-cut rectangles. Two layers: a tight,
+       darker "contact" shadow erases the crisp photo edge; a large, soft
+       ambient layer blurs the falloff into --bg. */
+    .svc-card:not(.is-center) .card-inner {
+      box-shadow:
+        0 0 10px rgba(10, 9, 6, 0.85),
+        0 0 60px 10px rgba(10, 9, 6, 0.65);
     }
     /* Reveal layer — GSAP animates opacity+scale+y here for the scroll-scrubbed
        entrance, kept separate from .svc-card (carousel-owned transform/opacity)
@@ -983,18 +1048,40 @@
     /* Center (active) card lifts on hover/focus — a tactile cue toward booking.
        Ring (::before) + inner lift together so the card moves as one unit; the
        .svc-card transform itself stays JS-owned for carousel positioning. */
-    .svc-card .card-inner,
     .svc-card::before {
       transition: transform 0.4s cubic-bezier(0.22,0.8,0.32,1);
+    }
+    /* Ambient glow lives on .card-inner (not .svc-card) so it's painted as
+       part of the same box that lifts on hover/focus — it rides along with
+       the translateY instead of staying anchored to the card's rest
+       position, which used to leave a seam at the bottom on lift. */
+    .svc-card .card-inner {
+      transition: transform 0.4s cubic-bezier(0.22,0.8,0.32,1), box-shadow 0.4s ease, filter 0.3s ease;
+    }
+    .svc-card.is-center .card-inner {
+      box-shadow: 0 0 40px rgba(201, 168, 76, 0.22);
     }
     .svc-card.is-center:focus-within .card-inner,
     .svc-card.is-center:focus-within::before {
       transform: translateY(-8px);
     }
+    .svc-card.is-center:focus-within .card-inner {
+      box-shadow: 0 0 52px rgba(201, 168, 76, 0.30);
+    }
     @media (hover: hover) and (pointer: fine) {
       .svc-card.is-center:hover .card-inner,
       .svc-card.is-center:hover::before {
         transform: translateY(-8px);
+      }
+      .svc-card.is-center:hover .card-inner {
+        box-shadow: 0 0 52px rgba(201, 168, 76, 0.30);
+      }
+      /* Sharpen the spotlight: side cards dim a touch further while the
+         active card is being hovered. Compounds with the per-card inline
+         brightness() svcApplyStyle() already sets, so this is a modest
+         extra multiplier, not a replacement. */
+      #carouselShell:has(.svc-card.is-center:hover) .svc-card:not(.is-center) .card-inner {
+        filter: brightness(0.82);
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -1111,7 +1198,12 @@
     /* ── REVIEWS ─────────────────────────────── */
     #reviews {
       position: relative;
-      z-index: 1;
+      /* Needs to sit ABOVE #hero (z-index:10) — during the services->reviews
+         warp-in it briefly overlaps a still-pinned #hero (painting solid
+         black via vmFadeOut at that point) while #services (z-index:12) is
+         fading its own content away; #reviews must paint in front of #hero
+         or it could never show through regardless of its own opacity. */
+      z-index: 11;
       background: var(--bg);
       padding: 0;
       overflow: hidden;
@@ -1133,17 +1225,26 @@
     .reviews-content {
       max-width: 500px;
     }
-    /* Subtle staggered blur-up reveal. Initial hidden state lives in CSS so
-       there's no flash before GSAP fires it (just before the section pins).
-       Skipped entirely under reduced-motion so content is shown immediately. */
+    /* Warp-in reveal (scale+blur+y+opacity), scrubbed by initServicesReveal()'s
+       `tl` as part of the services->reviews blackout/warp-out/warp-in
+       sequence. Initial hidden state lives in CSS so there's no flash before
+       GSAP takes over. Skipped entirely under reduced-motion so content is
+       shown immediately, in its normal resting state. */
     @media (prefers-reduced-motion: no-preference) {
-      .reviews-title,
-      .reviews-headline,
-      .reviews-desc,
-      .reviews-btn {
+      #reviews {
         opacity: 0;
-        transform: translateY(20px);
-        filter: blur(8px);
+        pointer-events: none;
+      }
+      .reviews-float-grid {
+        opacity: 0;
+      }
+      #reviews .reviews-title,
+      #reviews .reviews-headline,
+      #reviews .reviews-desc,
+      #reviews .reviews-btn {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+        filter: blur(10px);
         will-change: transform, opacity, filter;
       }
     }
@@ -1266,9 +1367,92 @@
       inset: 0;
       z-index: 4;
       background: var(--bg);
-      clip-path: inset(100% 0 0 0);
+      --rfo-edge: 100%;      /* tweened by GSAP: 100% = fully hidden, 0% = fully revealed */
+      --rfo-feather: 10vh;   /* feather band size — soft leading edge instead of a hard clip line */
+      -webkit-mask-image: linear-gradient(to bottom,
+        transparent var(--rfo-edge),
+        black calc(var(--rfo-edge) + min(var(--rfo-feather), var(--rfo-edge))),
+        black 100%);
+      mask-image: linear-gradient(to bottom,
+        transparent var(--rfo-edge),
+        black calc(var(--rfo-edge) + min(var(--rfo-feather), var(--rfo-edge))),
+        black 100%);
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
       pointer-events: none;
     }
+    /* Courses teaser caption — reuses the page-transition caption's gold
+       Cinzel gradient-text recipe (see page-transitions.js .pt-word), but
+       sized down: the ask is for the black margin around it to read as
+       dominant, not the text, so it stays well short of .pt-word's scale.
+       GSAP drives opacity/blur/y in sync with the overlay's own scroll-
+       scrubbed reveal, so it's fully reversible on scroll-up. */
+    .reviews-fadeout-caption-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1.5rem;
+      pointer-events: none;
+    }
+    /* Content-sized now (no inset/position:absolute of its own) —
+       background-clip:text sizes the gradient to THIS element's own box,
+       which hugs the glyphs instead of the full-bleed wrapper above, so the
+       full white->gold->brown range actually falls across the visible text
+       (same reason .reviews-title, ~line 1234, has always rendered
+       correctly: normally-sized box, not full-bleed). */
+    .reviews-fadeout-caption {
+      margin: 0;
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      line-height: 1.25;
+      font-size: clamp(1.375rem, 3.4vw, 2.25rem);
+      background: linear-gradient(180deg, #ffffff 0%, #d4b96a 42%, #6b4e1a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      opacity: 0;
+      will-change: transform, opacity, filter;
+    }
+
+    /* ── CORNER-BRACKET FRAME ─────────────────── */
+    /* left/top/width/height are GSAP-driven (see initReviewsReveal()) — first
+       set to hug .reviews-fadeout-caption's rect, then FLIPped to
+       .courses-card's rect. Radius/border/glow literally reuse .courses-card's
+       own recipe so the marks read as "the same frame" once they land on it. */
+    .corner-frame {
+      position: fixed;
+      left: 0; top: 0; width: 0; height: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0;
+      background: transparent;
+      will-change: transform, opacity;
+    }
+    .corner-mark {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: 2px solid rgba(212,175,55,0.5);
+      /* Lines only — no glow, no rounded joint. A box-shadow blooms a 28px
+         mark with a 2px stroke into a filled-looking blob, and border-radius
+         on the outer corner reads as a small rounded block rather than two
+         crisp crossing line segments. */
+      box-shadow: none;
+      border-radius: 0;
+    }
+    .corner-tl { top: 0;    left: 0;  border-right: none; border-bottom: none; }
+    .corner-tr { top: 0;    right: 0; border-left: none;  border-bottom: none; }
+    .corner-bl { bottom: 0; left: 0;  border-right: none; border-top: none;    }
+    .corner-br { bottom: 0; right: 0; border-left: none;  border-top: none;    }
 
     /* ── REVIEWS FLOAT GRID ──────────────────── */
     .reviews-float-grid {
@@ -1337,19 +1521,26 @@
       position: relative;
       z-index: 2;
       background: var(--bg);
-      padding: 0 var(--gutter);
-      min-height: 100svh;
-      display: flex;
-      flex-direction: column;
+      height: 100svh;      /* was min-height — now a cap, matching #hero's own model */
+      min-height: 680px;   /* matches #hero's own floor for very short viewports */
+      overflow: hidden;
+      /* No padding here anymore — spacing now comes entirely from
+         .courses-card's own inset below, matching .hero-card exactly. */
     }
+    /* Absolutely-positioned inset overlay, same recipe as .hero-card
+       (top/bottom:var(--gutter-y), left/right:var(--gutter)) — this is what
+       gives it the same spacing above/below/left/right as the hero section,
+       instead of the old content-driven flex:1 height. */
     .courses-card {
-      position: relative;
+      position: absolute;
+      top: var(--gutter-y); left: var(--gutter); right: var(--gutter); bottom: var(--gutter-y);
       overflow: hidden;
       border-radius: 16px;
       border: 1px solid rgba(212,175,55,0.5);
       box-shadow: 0 0 20px rgba(212,175,55,0.5);
       padding: 32px 2.75rem 3rem;
-      flex: 1;
+      display: flex;
+      align-items: center; /* vertically centers .courses-inner within the available height */
     }
     .courses-bg {
       position: absolute; inset: 0;
@@ -1371,10 +1562,45 @@
     }
     .courses-inner {
       position: relative; z-index: 2;
+      width: 100%; /* .courses-card is now a flex row (see its align-items:center,
+                      added for vertical centering) — a flex item shrinks to its
+                      content width by default, so this is needed to keep the
+                      grid spanning the card's full content width like before. */
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4.5rem;
+      /* Middle track is auto-sized to .cert-elipse itself, so the two flanking
+         tracks automatically split whatever width is LEFT after it — this is
+         what makes each half's centering already account for the ellipse's
+         footprint with no manual math needed. minmax(0, 1fr) (not bare 1fr)
+         on both flanking tracks forces them to stay genuinely EQUAL — bare
+         1fr has an implicit min-width:auto floor, so the right track's
+         un-shrinkable card content (.course-slide has flex-shrink:0) would
+         otherwise claim extra width from its 1fr share and push the ellipse
+         off-center. */
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      column-gap: 3rem;
       align-items: start;
+    }
+    /* Center the copy block within the left half, both axes. */
+    .courses-inner > div:first-child {
+      text-align: center;
+    }
+    /* align-self:center only makes sense at desktop's grid layout (vertical
+       centering within the row, to match .cert-elipse's own align-self on
+       the same row). Scoped to min-width:768px because below that
+       .courses-inner switches to flex-direction:column (see the 767px
+       breakpoint's own override), where align-self instead controls the
+       CROSS axis — i.e. horizontal width/centering — and would collapse
+       this div to shrink-to-fit instead of the full-width stretch its
+       mobile rules assume. */
+    @media (min-width: 768px) {
+      .courses-inner > div:first-child {
+        align-self: center;
+      }
+    }
+    /* Center the card rail within the right half instead of pinning it flush
+       to the card's right edge (was inline style="margin-left:auto"). */
+    .courses-inner > div:last-child {
+      justify-self: center;
     }
     .courses-eyebrow {
       font-size: 0.6rem;
@@ -1385,22 +1611,22 @@
     }
     .courses-title {
       font-family: 'Cinzel', serif;
-      font-size: clamp(4rem, 8vw, 7.5rem);
+      font-size: clamp(2.75rem, 5.5vw, 4.25rem);
       font-weight: 400;
       line-height: 0.9;
       background: linear-gradient(180deg, #ffffff 0%, #ffffff 69%, #000000 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 1.75rem;
+      margin-bottom: 1rem;
     }
     .courses-tagline {
       font-family: 'Montserrat', sans-serif;
       font-style: normal;
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 300;
       color: var(--white);
-      margin-bottom: 0.625rem;
+      margin-bottom: 1.5rem;
       white-space: nowrap;
     }
     .courses-tagline .tagline-keyword {
@@ -1427,34 +1653,39 @@
     }
     .courses-desc {
       font-family: 'Montserrat', sans-serif;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 300;
       color: var(--muted);
-      line-height: 1.75;
+      line-height: 1.65;
       max-width: 40ch;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
     .courses-desc-2 {
       font-family: 'Montserrat', sans-serif;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 300;
       color: var(--muted);
-      line-height: 1.75;
-      margin-bottom: 2rem;
+      line-height: 1.65;
+      margin-bottom: 1.25rem;
     }
     .cert-elipse {
-      position: absolute;
-      bottom: 4rem;
-      left: 2.75rem;
-      width: 220px;
-      height: 220px;
+      /* Real grid item now (was position:absolute, floating over the left
+         column) — sits in .courses-inner's own middle "auto" track, centered
+         on both axes so it reads as a dead-center splitter between the two
+         halves. Still position:relative so its own img/ring children (below)
+         stay positioned against IT rather than .courses-card. */
+      position: relative;
+      align-self: center;
+      justify-self: center;
+      width: 180px;
+      height: 180px;
       z-index: 2;
     }
     .cert-elipse img {
       position: absolute;
-      top: 20px; left: 20px;
-      width: 180px;
-      height: 180px;
+      top: 16px; left: 16px;
+      width: 148px;
+      height: 148px;
       object-fit: cover;
       opacity: 0.8;
       border-radius: 50%;
@@ -1505,6 +1736,16 @@
       );
       animation: gradient-rotate 10s linear infinite;
       z-index: 0;
+      /* Reveal-gated via its OWN custom property (see initReviewsReveal()'s
+         releaseTL), not by fading .course-slide.active itself: this pseudo
+         sits at inset:-2px behind .course-card-inner (an opaque box at
+         inset:0), so fading the shared parent also faded the still-opaque
+         .course-card-inner mid-reveal — briefly making it translucent and
+         letting this FULL gradient fill bleed through the whole card
+         instead of just the intended 2px ring. Revealing this only after
+         .course-card-inner is already fully opaque avoids that: just the
+         thin gold line appears, never a filled blob. */
+      opacity: var(--card-border-opacity, 1);
     }
     .course-slide.preview {
       width: 88px;
@@ -1543,11 +1784,15 @@
       background: #0A0906;
     }
 
-    /* Course card shell — sets height */
+    /* Course card shell — sets height. Taller than before so the full-bleed
+       image (.course-thumb) reads with as much presence as the info panel
+       overlaid on it, instead of the panel dominating a short card. Clamped
+       to viewport height (not a flat px value) so it can't overflow
+       .courses-card's overflow:hidden on short viewports. */
     .course-card {
       border-radius: 20px;
       position: relative;
-      min-height: 600px;
+      min-height: clamp(420px, 62vh, 620px);
     }
     .course-thumb {
       position: absolute;
@@ -1805,12 +2050,12 @@
     .social-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
     .social-count {
       display: inline-flex;
-      align-items: baseline;
+      align-items: center;
       gap: 0.375rem;
       font-size: 0.5625rem;
       letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.45);
+      font-variant: small-caps;
+      color: var(--white);
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.1);
       padding: 0.375rem 0.875rem;
@@ -1818,11 +2063,11 @@
       white-space: nowrap;
     }
     .social-count-num {
-      font-family: 'Cinzel', serif;
+      font-family: 'Montserrat', sans-serif;
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 700;
       letter-spacing: 0;
-      text-transform: none;
+      font-variant: normal;
       color: var(--gold);
     }
     .social-pill {
@@ -1833,9 +2078,9 @@
       color: rgba(255,255,255,0.55);
       text-decoration: none;
       border: 1px solid rgba(255,255,255,0.1);
-      transition: background 0.2s, color 0.2s;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
-    .social-pill:hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); }
+    .social-pill:hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); border-color: var(--gold); }
     .socials-btn { align-self: flex-start; }
 
     .gif-wrap {
@@ -1843,34 +2088,39 @@
       align-self: end;
     }
     .gif-wrap img { width: 100%; max-width: 560px; height: auto; display: block; }
+    /* Dark scrim, faded in only once the footer is fully docked (see the
+       footer parallax script's `docked` state) — #socials keeps peeking
+       around the footer's edges as it lands, so this dims that peek rather
+       than hiding it. */
+    .socials-dim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
 
     /* ── FOOTER ──────────────────────────────── */
-    /* Opaque full-bleed "stage" — masks #socials behind it for the entire
-       scroll-driven yPercent translate, so no transitional gap ever exposes
-       the section underneath (previously the card's own margin was the gap).
-       Height is 100vh PLUS a buffer (not "100vh - 24px"): the stage's own
-       height directly sets how much extra scroll room exists past its
-       natural offset, so anything less than a full 100vh leaves a
-       permanent gap at the very end of the page that can never be
-       scrolled away — the buffer also absorbs real-device vh/innerHeight
-       mismatches (mobile browser chrome collapsing, sub-pixel rounding). */
     footer {
+      /* NOT position:sticky — tried, but this codebase's footer parallax
+         script (see footer parallax script) reads `footer.offsetTop` to
+         locate the footer in document flow, and `offsetTop` reporting for
+         sticky-positioned elements is inconsistent/unreliable across
+         browsers once the sticky state engages (confirmed live: it dropped
+         to ~15px instead of the real ~20000px position, which would have
+         broken the entire raw-fill-progress calculation downstream). The
+         resting-state stability instead comes from fixing the root cause —
+         see the `raw >= 0.4` early-commit comment in the footer parallax
+         script — rather than a native sticky box.
+      */
       position: relative;
       z-index: 2;
       box-sizing: border-box;
-      height: calc(100vh + 60px);
-      margin: calc(-6vh + 2.88px) 0 0;
-      background: var(--bg);
-    }
-    /* Visual card, inset within the opaque stage — reproduces the previous
-       footer's exact look/position (rounded, gold border, glow). */
-    .footer-card {
-      position: relative;
-      box-sizing: border-box;
-      height: calc(100% - 24px);
-      margin: 0 24px 24px;
+      height: calc(100vh - 48px);
       padding: 1rem 2.75rem 2.5rem;
       overflow: hidden;
+      margin: calc(-6vh + 2.88px) 24px 24px;
       border-radius: 16px;
       border: 1px solid rgba(212, 175, 55, 0.5);
       box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
@@ -1973,7 +2223,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-top: 18px;
+      margin-top: 6px;
     }
     .footer-location {
       font-size: 0.8125rem;
@@ -1997,6 +2247,7 @@
     .footer-spacer { flex: 1; }
     /* ── Nav pinned to bottom ── */
     .footer-bottom {
+      position: relative;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -2012,7 +2263,38 @@
       display: flex;
       justify-content: flex-end;
     }
-    .footer-contact-col { text-align: right; }
+    /* Hidden-at-rest state for the real, statically-positioned footer
+       buttons — warped in/out via GSAP (see footer parallax script) once
+       scroll reaches/leaves 100%, same recipe used for reveals elsewhere
+       in this file (opacity + scale + blur + y). No `transform`/`filter`
+       transition here — GSAP owns those, this is just the resting state so
+       there's no flash of a fully-visible button before JS runs. */
+    #footerBookBtn,
+    #footerMenuBtn {
+      opacity: 0;
+      transform: translateY(16px) scale(0.9);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+    /* Optical correction, footer copy only (left per the user's own choice —
+       #bookBtn's identical, numerically-symmetric 14px/14px padding is left
+       untouched everywhere else): the arrow glyph is a thin trailing line on
+       its left vs. a bold chevron point on its right, so equal padding still
+       reads as more space on the left. Nudging the arrow left tightens that
+       gap without touching the shared .btn-gold padding used elsewhere. */
+    #footerBookBtn .btn-arrow {
+      margin-left: -2px;
+    }
+    /* Bottom-center, independent of the menu anchor's flex position — see
+       the mobile query (~L2597) which resets this back to static/centered
+       within its own column-reverse stack. */
+    .footer-contact-col {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      text-align: center;
+    }
     .footer-col-label {
       font-size: 14px;
       font-weight: 400;
@@ -2236,6 +2518,12 @@
          share one vertical center line. */
       #menuBtn { top: calc(var(--gutter) + 14px); left: calc(var(--gutter) + 14px); height: 2.25rem; }
       #bookBtn { top: calc(var(--gutter) + 14px); right: calc(var(--gutter) + 14px); font-size: 0.625rem; }
+      /* Static footer twins — same size reduction as their nav counterparts
+         (the `top`/`right` repositioning above is FAB-corner-specific and
+         doesn't apply here, but the font-size/height drops do: without them
+         the footer buttons render visibly larger than the nav ones). */
+      #footerBookBtn { font-size: 0.625rem; }
+      #footerMenuBtn { height: 2.25rem; }
       .menu-btn-icon { width: 12px; height: 12px; }
       .menu-btn-label { font-size: 12px; }
 
@@ -2257,8 +2545,6 @@
         white-space: nowrap;
       }
       .svc-desc { font-size: 0.875rem; }
-      /* Fill the viewport: drop the cards lower and pin the tease to the bottom */
-      #services { min-height: 100svh; }
       .showcase-row { margin-top: 3rem; }
       /* Trim the glass-box side padding on phones so the readable-size title
          fits the narrow card without truncating (desktop keeps its 44px). */
@@ -2274,7 +2560,7 @@
          full flexed height below, letting justify-content:space-between push
          the rail toward the bottom — otherwise leftover height just pools
          below the rail instead of being claimed as breathing room above it. */
-      .courses-card { padding: var(--space-4) 12px var(--space-5); display: flex; flex-direction: column; }
+      .courses-card { padding: var(--space-4) 12px var(--space-5); display: flex; flex-direction: column; align-items: stretch; }
       .courses-inner { flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; gap: var(--space-4); }
       .courses-inner > * { min-width: 0; }
       .courses-inner > div:last-child { padding-top: 0 !important; margin-left: 0 !important; }
@@ -2359,26 +2645,9 @@
          ~L321-334) — content is trimmed to fit rather than the stage growing
          to fit content, so the gold border/glow "island" never stretches. */
       footer {
-        /* Fixed, not min-height — same overshoot-buffer formula as the
-           desktop rule (see comment there), now a hard cap instead of a
-           floor. Preserves the same total scroll length, so the "never
-           permanently exposes #socials" invariant still holds. */
-        height: calc(100svh + 60px);
-        margin: calc(-6vh + 2.88px) 0 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-      }
-      .footer-card {
-        /* NOT bare 100% — must subtract the card's own bottom margin
-           (mirrors desktop's calc(100% - 24px)), or the margin adds on top
-           of a now-fixed box and reintroduces overflow past the cap. */
-        height: calc(100% - var(--gutter));
-        display: flex;
-        flex-direction: column;
-        margin: 0 var(--gutter) var(--gutter);
+        height: calc(100svh - 2 * var(--gutter));
+        margin: calc(-6vh + 2.88px) var(--gutter) var(--gutter);
         padding: 1.5rem var(--gutter) 2rem;
-        /* overflow:hidden already inherited from the desktop rule. */
       }
       /* Centered layout: header group floats in the vertical middle,
          contact block recedes to the very bottom, menu docks below it.
@@ -2386,23 +2655,63 @@
          leftover space — unlike margin:auto, it can't overflow (shrinks
          toward 0 instead of pushing the box taller). */
       .footer-inner { flex: 1; text-align: center; align-items: center; justify-content: space-between; }
-      .footer-head { flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
+      /* Whole header — eyebrow + UNIQUE/TOUCH stacked, hero mobile's own
+         treatment (~L2404-2426) — pulled out of .footer-inner's flex flow to
+         sit over the footer-mobile.mp4 video's open-ocean half (right side;
+         the founder occupies the left half — see the video source at
+         ~L3109). Taken out via position:absolute rather than display:none
+         on the flow itself, so .footer-inner's justify-content:space-between
+         still pins .footer-bottom (menu + contact) to the bottom exactly as
+         before — no changes needed there. */
+      .footer-head {
+        position: absolute;
+        left: 50%;
+        right: var(--gutter);
+        top: 14%;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.2rem;
+      }
       /* display:contents flattens this group so Beauty Salon / TOUCH become
          direct flex children of .footer-head, reorderable like the hero
          (.hero-title-right at ~L1984) — Beauty Salon stacks above UNIQUE. */
       .footer-title-right-group { display: contents; }
-      .footer-beauty-tag { order: 1; margin-bottom: 8px; font-size: 1.15rem; }
+      .footer-beauty-tag { order: 1; margin: 0 0 6px; font-size: 1.05rem; }
       .footer-title-left { order: 2; }
       .footer-title-right-group .footer-title-word { order: 3; }
-      /* Eyebrow + both headers hidden on mobile — .footer-head stays in the
-         flex flow (not display:none itself) so its margin-top:auto above
-         still absorbs leftover space the same way it did with them visible. */
-      .footer-title-word, .footer-beauty-tag { display: none; }
+      /* Same gradient-clip treatment as .hero-title-word (~L393-405), scaled
+         down to fit this right-half column instead of the hero's full-width
+         mobile stack (which runs up to 148px). */
+      .footer-title-word {
+        display: block;
+        font-size: clamp(2rem, 11vw, 2.75rem);
+        line-height: 0.95;
+        background: linear-gradient(180deg, #ffffff 0%, #ffffff 69%, #000000 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
       /* Curaçao tagline removed on mobile — keeps the header block clean. */
       .footer-location { display: none; }
+      /* Book button groups directly beneath the header stack, same
+         right-half column — the dock script (see footer parallax script)
+         reads this anchor's live position each frame, so it just flies the
+         real Book button here without any JS changes. `top` is .footer-head's
+         own 14% PLUS a fixed rem gap (not an independent 42%) — two
+         independent viewport-height percentages drift apart on taller/
+         shorter phones, which is what made the docked button read as
+         floating alone rather than grouped with the header above it. */
+      .footer-top-right {
+        position: absolute;
+        left: 50%;
+        right: var(--gutter);
+        top: calc(14% + 8.5rem);
+        text-align: center;
+        margin-left: 0;
+      }
       .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; }
       .footer-spacer { display: none; }
-      .footer-top-right { text-align: center; margin-left: 0; }
       /* Dock centering: the scroll-dock lands the Book button at its anchor's
          (right edge − button width). Matching the anchor width to the button
          width (154px pill here, 40px FAB at ≤480) centers it. */
@@ -2413,7 +2722,7 @@
       /* Menu docks at its anchor's left edge; anchor width = menu button width
          (54px) so the centered anchor centers the button. */
       #footerMenuAnchor { align-self: center; width: 54px; margin: 0 auto; }
-      .footer-contact-col { text-align: center; }
+      .footer-contact-col { position: static; transform: none; text-align: center; }
       /* Shrink contact so it doesn't compete with the header. */
       .footer-col-label { font-size: 11px; margin-bottom: 8px; }
       .footer-contact { gap: 4px; }
@@ -2422,6 +2731,8 @@
 
       /* Book FAB — smaller so it doesn't crowd the Menu button */
       #bookBtn { padding: 8px 16px; }
+      /* Static footer book button — same sizing, not the FAB itself */
+      #footerBookBtn { padding: 8px 16px; }
 
       /* Preloader — vertical stack: UNIQUE / ◯ / TOUCH / Beauty Salon.
          CSS-only (order + column) so the desktop layout and the FLIP exit
@@ -2458,6 +2769,9 @@
       /* Book pill keeps its label (matches desktop); just tighten it slightly
          so Menu + pill clear each other down to 320px-wide screens. */
       #bookBtn { padding: 8px 14px; }
+      /* #footerBookBtn doesn't share the clearance problem (it's not next to
+         a menu button) but should still render at the exact same size. */
+      #footerBookBtn { padding: 8px 14px; }
     }
   </style>
 </head>
@@ -2527,14 +2841,17 @@
 
     <!-- Social icons — bottom right -->
     <div class="menu-socials">
-      <a href="https://www.facebook.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook">
+      <a href="https://www.facebook.com/Uniquetouch.beautysalonn" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
       </a>
-      <a href="https://www.instagram.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram">
+      <a href="https://www.instagram.com/uniquetouch.beautysalon/" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
       </a>
-      <a href="https://www.tiktok.com/@uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok">
+      <a href="https://www.tiktok.com/@uniquetouch.beautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z"/></svg>
+      </a>
+      <a href="https://youtu.be/GlGx_OqXJSY?si=REifS6Hbfn2MJzxI" target="_blank" rel="noopener" class="menu-social-link" aria-label="YouTube">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.4 3.6-6.4 3.6z"/></svg>
       </a>
     </div>
 
@@ -2589,7 +2906,7 @@
             <div class="vb-media">
               <video class="vb-video" src="brand_assets/hero-vid.mp4"
                      poster="brand_assets/hero-poster.webp"
-                     autoplay muted loop playsinline preload="auto"></video>
+                     autoplay muted playsinline preload="auto"></video>
             </div>
             <svg class="vb-ring-text" viewBox="0 0 163 162" width="163" height="162" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
 <ellipse cx="79.6036" cy="5.4811" rx="1.33333" ry="4" transform="rotate(-2.07651 79.6036 5.4811)" fill="white" fill-opacity="0.8"/>
@@ -2632,19 +2949,23 @@
     <!-- Gold border ring (tracks the clip-path, not masked by it) -->
     <div class="vm-ring" id="vmRing"></div>
 
-    <!-- ONE video element — full stage, clip-path masked to badge circle -->
-    <div class="vm-wrap" id="vmWrap">
-      <video id="vmVideo" src="brand_assets/hero-vid.mp4"
-             poster="brand_assets/hero-poster.webp"
-             autoplay muted loop playsinline preload="auto"></video>
-      <div class="vm-vignette" id="vmVignette"></div>
-      <button class="vr-audio-btn muted" id="vrAudioBtn" aria-label="Toggle audio">
-        <div class="vr-wave">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
-        <span class="vr-audio-label" id="vrAudioLabel">Unmute</span>
-      </button>
-      <div class="vm-fadeout" id="vmFadeOut"></div>
+    <!-- Circular reveal — #vmMask provides the (static) clip shape and is the
+         only thing whose transform:scale animates on scroll; #vmWrap
+         counter-scales so the video never visually distorts. -->
+    <div class="vm-mask" id="vmMask">
+      <div class="vm-wrap" id="vmWrap">
+        <video id="vmVideo" src="brand_assets/hero-vid.mp4"
+               poster="brand_assets/hero-poster.webp"
+               autoplay muted playsinline preload="auto"></video>
+        <div class="vm-vignette" id="vmVignette"></div>
+        <button class="vr-audio-btn muted" id="vrAudioBtn" aria-label="Toggle audio">
+          <div class="vr-wave">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <span class="vr-audio-label" id="vrAudioLabel">Unmute</span>
+        </button>
+        <div class="vm-fadeout" id="vmFadeOut"></div>
+      </div>
     </div>
 
   </div>
@@ -2662,6 +2983,7 @@
     <span class="preview-text" id="previewLeft">← <span id="previewLeftName"></span></span>
     <div class="showcase-pill" id="showcasePill">
       <span class="showcase-name" id="showcaseName"></span>
+      <div class="showcase-underline" id="showcaseUnderline" aria-hidden="true"></div>
     </div>
     <span class="preview-text" id="previewRight"><span id="previewRightName"></span> →</span>
   </div>
@@ -2779,8 +3101,29 @@
 
   <!-- Grows solid black from the bottom during the pin's final stretch —
        seamless, flush handoff into #courses. -->
-  <div class="reviews-fade-out" id="reviewsFadeOut"></div>
+  <div class="reviews-fade-out" id="reviewsFadeOut">
+    <!-- Positions the caption only — carries no gradient/text styling itself.
+         This used to be one element that was BOTH the inset:0 positioning box
+         AND the gradient-text box, which sized the gradient to the full
+         ~100vh section instead of to the glyphs (see .reviews-fadeout-caption
+         CSS for the fix). -->
+    <div class="reviews-fadeout-caption-wrap">
+      <p class="reviews-fadeout-caption" id="reviewsFadeoutCaption">Dream of a Beauty Career?</p>
+    </div>
+  </div>
 </section>
+
+<!-- Corner-bracket frame: starts hugging the reviews handoff caption, then
+     FLIPs (position+size tween) onto .courses-card's real border. Deliberately
+     a body-level sibling, NOT nested inside #reviews/#courses, so it's
+     unaffected by either section's own pin/unpin choreography (#reviews is
+     position:fixed while pinned, and gets wrapped in a GSAP pin-spacer div). -->
+<div class="corner-frame" id="cornerFrame" aria-hidden="true">
+  <span class="corner-mark corner-tl"></span>
+  <span class="corner-mark corner-tr"></span>
+  <span class="corner-mark corner-bl"></span>
+  <span class="corner-mark corner-br"></span>
+</div>
 
 <!-- ═══════════════ COURSES ══════════ -->
 <section id="courses" data-cursor-state="courses">
@@ -2796,7 +3139,7 @@
       <p class="courses-tagline">Where <span class="tagline-keyword">Passion</span> Meets <span class="tagline-keyword tagline-accent"><img src="brand_assets/header-accent.svg" class="accent-svg" width="122" height="83" aria-hidden="true" alt=""><span>Profession</span></span>.</p>
       <p class="courses-desc" style="max-width:none;color:var(--white)"><span style="display:block;white-space:nowrap"><span style="font-weight:500">Learn</span> the <span style="font-weight:500">art of beauty</span> through hands-on</span><span style="display:block;white-space:nowrap">courses designed to build confidence, skill, and income.</span></p>
       <p class="courses-desc-2" style="max-width:none;white-space:nowrap;color:var(--white)"><span style="font-weight:500">Start</span> your journey to becoming a <span style="color:var(--gold)">certified</span> professional.</p>
-      <a href="https://uniquetouchk1do.setmore.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="btn-ghost reviews-btn"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Begin Your Journey</span></a>
+      <a href="https://uniquetouchk1do.setmore.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="btn-ghost courses-btn"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Begin Your Journey</span></a>
     </div>
     <div class="cert-elipse">
       <img src="brand_assets/certificate-elipse.webp" alt="Certified professionals" loading="lazy" decoding="async">
@@ -2842,7 +3185,7 @@
       </svg>
     </div>
 
-    <div style="padding-top: 168px; margin-left: auto;">
+    <div>
       <div class="course-rail" id="courseRail"></div>
     </div>
   </div>
@@ -2858,37 +3201,42 @@
       <div class="social-row">
         <span class="social-count"><span class="social-count-num">20K+</span> interactions across socials</span>
         <!-- Facebook -->
-        <a href="https://www.facebook.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="social-pill" aria-label="Facebook">
+        <a href="https://www.facebook.com/Uniquetouch.beautysalonn" target="_blank" rel="noopener" class="social-pill" aria-label="Facebook">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
         </a>
         <!-- Instagram -->
-        <a href="https://www.instagram.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="social-pill" aria-label="Instagram">
+        <a href="https://www.instagram.com/uniquetouch.beautysalon/" target="_blank" rel="noopener" class="social-pill" aria-label="Instagram">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
         </a>
         <!-- TikTok -->
-        <a href="https://www.tiktok.com/@uniquetouchbeautysalon" target="_blank" rel="noopener" class="social-pill" aria-label="TikTok">
+        <a href="https://www.tiktok.com/@uniquetouch.beautysalon" target="_blank" rel="noopener" class="social-pill" aria-label="TikTok">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.77 0 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0 0 12.68 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
         </a>
+        <!-- YouTube -->
+        <a href="https://youtu.be/GlGx_OqXJSY?si=REifS6Hbfn2MJzxI" target="_blank" rel="noopener" class="social-pill" aria-label="YouTube">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.4 3.6-6.4 3.6z"/></svg>
+        </a>
       </div>
-      <a href="https://www.instagram.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="btn-ghost socials-btn"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Be part of our journey</span></a>
+      <a href="https://www.tiktok.com/@uniquetouch.beautysalon" target="_blank" rel="noopener" class="btn-ghost socials-btn"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Be part of our journey</span></a>
     </div>
     <div class="gif-wrap">
       <img src="brand_assets/socialss.webp" alt="Unique Touch Beauty Salon" loading="lazy" decoding="async">
     </div>
   </div>
+  <div class="socials-dim" id="socialsDim" aria-hidden="true"></div>
 </section>
 
 <!-- ═══════════════ FOOTER ══════════ -->
 <footer data-cursor-state="footer">
-  <div class="footer-card">
-    <div class="footer-bg">
-      <video class="footer-bg-video" autoplay muted loop playsinline>
-        <source src="brand_assets/footbg.mp4" type="video/mp4">
-      </video>
-      <div class="footer-bg-tint"></div>
-      <div class="footer-bg-grain"></div>
-    </div>
-    <div class="footer-inner">
+  <div class="footer-bg">
+    <video class="footer-bg-video" autoplay muted loop playsinline>
+      <source src="brand_assets/footer-mobile.mp4" media="(max-width: 767px)" type="video/mp4">
+      <source src="brand_assets/footbg.mp4" type="video/mp4">
+    </video>
+    <div class="footer-bg-tint"></div>
+    <div class="footer-bg-grain"></div>
+  </div>
+  <div class="footer-inner">
       <!-- Split header: UNIQUE left · TOUCH right -->
       <div class="footer-head" id="footerHead">
         <div class="footer-title-left">
@@ -2903,14 +3251,32 @@
         <div class="footer-top-right">
           <p class="footer-location">Beauty Salon in the beautiful island of <em>Curaçao</em></p>
 
-          <div id="footerBookAnchor"></div>
+          <!-- Real, statically-laid-out button — NOT position:fixed, no JS
+               position tracking. Warp-fades in via the footer parallax
+               script once scroll reaches 100% (see footer parallax script),
+               independent of the floating #bookBtn nav FAB above. -->
+          <div id="footerBookAnchor"><a href="service-experience.html" class="btn-gold" id="footerBookBtn"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Find Your <span class="word-swap"><span class="word-swap-mono">Treatment</span><span class="word-swap-cinzel">Treatment</span></span></span></a></div>
         </div>
       </div>
       <!-- Spacer -->
       <div class="footer-spacer"></div>
       <!-- Nav pinned to bottom -->
       <div class="footer-bottom">
-        <div id="footerMenuAnchor"></div>
+        <!-- Same idea as #footerBookBtn above — a real, static Menu button.
+             Clicking it just clicks the real #menuBtn so it reuses that
+             element's own open/close logic (see the menu open/close script)
+             instead of duplicating it. -->
+        <div id="footerMenuAnchor">
+          <button class="menu-btn" id="footerMenuBtn" aria-expanded="false" aria-controls="menuPanel">
+            <span class="menu-btn-icon">
+              <img src="brand_assets/buller-list.svg" width="14" height="14" alt="" aria-hidden="true">
+            </span>
+            <span class="menu-btn-label">
+              <span class="lbl-menu">Menu</span>
+              <span class="lbl-close">Close</span>
+            </span>
+          </button>
+        </div>
         <div class="footer-contact-col">
           <p class="footer-col-label">Contact Us</p>
           <div class="footer-contact">
@@ -2920,7 +3286,6 @@
         </div>
       </div>
     </div>
-  </div>
 </footer>
 
 <script>
@@ -2931,17 +3296,39 @@ const bookBtn = document.getElementById('bookBtn');
 let lastScrollY = window.scrollY;
 let menuOpenScrollY = null;
 let footerAnimActive = false;
+// True while the courses reveal (see initReviewsReveal()) is actively
+// autoplaying/holding — its onUpdate snaps window.scrollY back to a locked
+// position on every tick while step 1/2 are mid-autoplay, and those
+// corrective snaps looked like "scrolling up" to the plain scroll handler
+// below, re-showing the nav (z-index 201) on top of #courses (z-index 15)
+// mid-reveal. Gated the same way footerAnimActive already gates this handler.
+let reviewsRevealActive = false;
 
 let navShown = true; // buttons start visible
-function setNavVisibility(visible) {
+const NAV_BIRTH_DURATION = 0.52; // matches the file's existing reveal-animation convention
+// visible/hidden is a scale+opacity "birth" — buttons grow into place rather
+// than just fading, mirrored perfectly in both directions. opts.resetPosition
+// (default true) can be set false to reveal in place instead of snapping to
+// the natural x:0,y:0 nav position — used when revealing docked at the
+// footer anchors (see footer parallax script). opts.onComplete lets callers
+// chain follow-up work (e.g. snapping position back) after the tween lands.
+function setNavVisibility(visible, opts) {
+  opts = opts || {};
   // State guard: the scroll handler calls this every scroll event, and with
   // normalizeScroll driving touch scrolling from rAF that's every frame —
-  // each redundant gsap.to restarted the 0.25s fade from its current
-  // progress, so it never completed crisply. Only tween on an actual flip.
+  // each redundant gsap.to restarted the fade from its current progress, so
+  // it never completed crisply. Only tween on an actual flip. This also
+  // doubles as the cross-system lock: both this scroll handler and the
+  // footer-dock script (see footer parallax script) call setNavVisibility
+  // directly rather than mutating navShown themselves, so whichever one
+  // reaches a given transition first "claims" it and the other's call is a
+  // harmless no-op — no competing tweens.
   if (typeof gsap === 'undefined' || visible === navShown) return;
   navShown = visible;
-  gsap.to([menuBtn, bookBtn], {
+  const vars = {
     autoAlpha: visible ? 1 : 0,
+    scale: visible ? 1 : 0.9,
+    transformOrigin: '50% 50%',
     // Keep clickability in lockstep with visibility — the footer-dock
     // script (see footer parallax script) sets pointer-events:'none' on
     // these buttons while docking and only ever restores 'auto' once the
@@ -2955,17 +3342,29 @@ function setNavVisibility(visible) {
     // fade-out could otherwise leave a button visible but still offset at
     // its old footer-anchor position. undefined on the hide branch is a
     // GSAP no-op, so hide behavior is unchanged.
-    x: visible ? 0 : undefined,
-    y: visible ? 0 : undefined,
-    duration: 0.25,
-    ease: 'power2.inOut',
+    x: (visible && opts.resetPosition !== false) ? 0 : undefined,
+    y: (visible && opts.resetPosition !== false) ? 0 : undefined,
+  };
+  // opts.instant skips the birth tween entirely (gsap.set, not .to) — used
+  // when bailing out of the footer's docked state on scroll-up (see footer
+  // parallax script), where the docked position sits mid-screen on mobile
+  // and a spring fade-out there reads as the buttons being stuck in place.
+  if (opts.instant) {
+    gsap.set([menuBtn, bookBtn], vars);
+    if (opts.onComplete) opts.onComplete();
+    return;
+  }
+  gsap.to([menuBtn, bookBtn], Object.assign({}, vars, {
+    duration: NAV_BIRTH_DURATION,
+    ease: 'spring',
     overwrite: 'auto', // still needed when direction flips mid-fade
-  });
+    onComplete: opts.onComplete,
+  }));
 }
 
 document.addEventListener('menu:close', () => { menuOpenScrollY = null; });
 window.addEventListener('scroll', () => {
-  if (footerAnimActive) return;
+  if (footerAnimActive || reviewsRevealActive) return;
   const y = window.scrollY;
   if (menuBtn && menuBtn.classList.contains('is-open')) {
     if (menuOpenScrollY === null) menuOpenScrollY = y;
@@ -2986,23 +3385,36 @@ window.addEventListener('scroll', () => {
   const menuBtn      = document.getElementById('menuBtn');
   const menuPanel    = document.getElementById('menuPanel');
   const menuBackdrop = document.getElementById('menuBackdrop');
+  // Static footer twins (see footer parallax script) — kept in sync with
+  // #menuBtn's own open/close state below so whichever pair is actually
+  // visible (nav FABs vs. footer-docked buttons) always shows the correct
+  // icon-rotate/label-swap, not just the one the click happened to reach.
+  const footerMenuBtn = document.getElementById('footerMenuBtn');
+  const footerBookBtn = document.getElementById('footerBookBtn');
+  const allMenuBtns = [menuBtn, footerMenuBtn].filter(Boolean);
   let isOpen = false;
 
   function openMenu() {
     if (isOpen) return;
     isOpen = true;
-    menuBtn.classList.add('is-open');
-    menuBtn.setAttribute('aria-expanded', 'true');
+    allMenuBtns.forEach((el) => { el.classList.add('is-open'); el.setAttribute('aria-expanded', 'true'); });
     menuBackdrop.classList.add('is-open');
     menuPanel.classList.add('is-open');
 
-    // Pin panel to button's current rendered position (accounts for GSAP transforms).
-    // Also read bookBtn's rect — on mobile the panel spans nearly the full width, so it
-    // passes directly under/over bookBtn too and must clear whichever button is further
-    // in the panel's growth direction, not just menuBtn.
-    const btnRect  = document.getElementById('menuBtn').getBoundingClientRect();
-    const bookRect = document.getElementById('bookBtn').getBoundingClientRect();
+    // Pin panel to the CURRENTLY VISIBLE button pair's rendered position —
+    // #menuBtn/#bookBtn are always hidden (opacity 0) while in the footer
+    // zone now (they no longer fly down to it), so anchoring to them there
+    // would pin the panel to their invisible top-corner resting spot instead
+    // of the real, visible footer buttons the user actually clicked.
+    // Also read the book button's rect — on mobile the panel spans nearly
+    // the full width, so it passes directly under/over it too and must
+    // clear whichever button is further in the panel's growth direction,
+    // not just the menu button.
     const openUpward = !!footerAnimActive;
+    const activeMenuBtn = (openUpward && footerMenuBtn) ? footerMenuBtn : menuBtn;
+    const activeBookBtn = (openUpward && footerBookBtn) ? footerBookBtn : bookBtn;
+    const btnRect  = activeMenuBtn.getBoundingClientRect();
+    const bookRect = activeBookBtn.getBoundingClientRect();
     menuPanel.dataset.openUpward = openUpward ? '1' : '0';
 
     // On mobile the panel is centered on screen and width-fitted so it never
@@ -3013,15 +3425,16 @@ window.addEventListener('scroll', () => {
       ? ((window.innerWidth - panelW) / 2) + 'px'
       : btnRect.left + 'px';
 
-    // Anchor right next to the clicked button. bookBtn already blurs/dims and goes
-    // non-interactive the moment the menu opens (see .menu-backdrop.is-open ~ #bookBtn),
-    // so it's fine for the panel to grow past it — no need to clamp height against it.
-    // Only the top-of-page (downward) case still nudges the anchor itself when bookBtn
-    // conflicts at zero height (both buttons share the same row there), so the panel's
-    // very edge doesn't start inside it.
+    // Anchor right next to the clicked button. The active book button already
+    // blurs/dims and goes non-interactive the moment the menu opens (see
+    // .menu-backdrop.is-open ~ #bookBtn and its #footerBookBtn twin above),
+    // so it's fine for the panel to grow past it — no need to clamp height
+    // against it. Only the top-of-page (downward) case still nudges the
+    // anchor itself when it conflicts at zero height (both buttons share the
+    // same row there), so the panel's very edge doesn't start inside it.
     const gap = 8;
     const safeMargin = 16;
-    const desiredH = 224;
+    const desiredH = 256;
     const bookZoneStart = bookRect.top - gap;
     const bookZoneEnd   = bookRect.bottom + gap;
     let maxH;
@@ -3075,8 +3488,7 @@ window.addEventListener('scroll', () => {
   function closeMenu() {
     if (!isOpen) return;
     isOpen = false;
-    menuBtn.classList.remove('is-open');
-    menuBtn.setAttribute('aria-expanded', 'false');
+    allMenuBtns.forEach((el) => { el.classList.remove('is-open'); el.setAttribute('aria-expanded', 'false'); });
 
     // Step 1: fade out links
     menuPanel.classList.remove('links-visible');
@@ -3222,6 +3634,29 @@ function svcComputeLayout() {
   var s = window.innerWidth < 600
     ? Math.max(0.5, Math.min(0.64, (window.innerWidth - 100) / 480))
     : Math.max(0.62, Math.min(1, (window.innerWidth - 32) / 480));
+
+  // Also cap by available HEIGHT: #services pins to a fixed viewport height
+  // while it's on screen, so if the header + showcase row + section padding
+  // + a full-scale carousel would together exceed that, the excess just
+  // overflows past the bottom instead of being reachable by scrolling — and
+  // defeats the section's own vertical centering, since all of that "extra"
+  // height only ever grows downward past the fold rather than being
+  // distributed evenly above/below. Scale the WHOLE card system down
+  // uniformly (not just the carousel alone) so the center/near/far card
+  // proportions stay intact. Measured live off the actual DOM rather than a
+  // hardcoded budget, since the header's height varies with how its heading
+  // text wraps at different viewport widths.
+  var svcHeader = document.querySelector('.svc-section-header');
+  var svcShowcaseRow = document.querySelector('.showcase-row');
+  var svcEl = document.getElementById('services');
+  if (svcHeader && svcShowcaseRow && svcEl) {
+    var svcPadding = parseFloat(getComputedStyle(svcEl).paddingTop) + parseFloat(getComputedStyle(svcEl).paddingBottom);
+    var nonCarouselH = svcHeader.getBoundingClientRect().height + svcShowcaseRow.getBoundingClientRect().height + svcPadding;
+    var carouselBudget = window.innerHeight - nonCarouselH;
+    var heightScale = carouselBudget / 600; // 600 = the un-scaled center-card height this whole system is designed around
+    s = Math.min(s, Math.max(0.5, heightScale));
+  }
+
   SVC_CW = Math.round(440 * s); SVC_CH = Math.round(600 * s);   // center card
   SVC_NW = Math.round(285 * s); SVC_NH = Math.round(395 * s);   // near side cards
   SVC_FW = Math.round(196 * s); SVC_FH = Math.round(285 * s);   // far side cards
@@ -3322,10 +3757,16 @@ function svcUpdateCardContent(el, catIdx) {
 }
 
 function svcApplyStyle(el, offset, extraTx, animate) {
+  // |offset| >= 3 only exists transiently mid-swipe, while a recycled card is
+  // sliding out past the visible far slot — fade it to invisible instead of
+  // leaving it frozen underneath the card animating into that same far spot.
+  var isExiting = Math.abs(offset) >= 3;
   var absOff = Math.min(Math.abs(offset), 2);
   var w = absOff === 0 ? SVC_CW : absOff === 1 ? SVC_NW : SVC_FW;
   var h = absOff === 0 ? SVC_CH : absOff === 1 ? SVC_NH : SVC_FH;
-  var op = absOff === 0 ? 1.0 : absOff === 1 ? 0.55 : 0.35;
+  // Depth dimming is brightness-only (never opacity) so cards stay fully
+  // opaque and cleanly occlude one another instead of blending through.
+  var op = isExiting ? 0 : 1.0;
   var br = absOff === 0 ? 1.0 : absOff === 1 ? 0.60 : 0.45;
   var tx = svcGetBaseTx(offset) + extraTx;
 
@@ -3337,10 +3778,10 @@ function svcApplyStyle(el, offset, extraTx, animate) {
   el.style.opacity        = String(op);
   el.style.filter         = 'brightness(' + br + ')';
   el.style.transform      = 'translate(calc(-50% + ' + tx + 'px), -50%)';
-  el.style.zIndex         = offset === 0 ? '3' : Math.abs(offset) === 1 ? '2' : '1';
-  el.style.boxShadow      = offset === 0
-    ? '0 0 40px rgba(201,168,76,0.22)'
-    : '';
+  el.style.zIndex         = offset === 0 ? '4' : Math.abs(offset) === 1 ? '3' : Math.abs(offset) === 2 ? '2' : '1';
+  // Ambient glow is CSS-driven off .is-center (see .svc-card.is-center
+  // .card-inner) so it's painted on the same box as the hover-lift transform
+  // and rides along with it instead of staying anchored to the rest position.
   el.style.pointerEvents  = offset === 0 ? 'auto' : 'none';
   el.classList.toggle('is-center', offset === 0);
 }
@@ -3360,14 +3801,41 @@ function svcShowcaseEls() {
 // dragged "block". Single source of truth for the swap: svcNavigate() below.
 var SVC_SHOWCASE_EASE = 'cubic-bezier(0.22,0.8,0.32,1)'; // Spring — same as svcApplyStyle()
 var SVC_SHOWCASE_BLUR = '6px';
+var SVC_UNDERLINE_EASE = 'cubic-bezier(0.16,1,0.3,1)'; // pronounced ease-out — slow, breathing finish
+
+function svcUnderlineCollapse(ms) {
+  var el = document.getElementById('showcaseUnderline');
+  if (!el) return;
+  el.style.transition = 'transform ' + ms + 'ms ' + SVC_SHOWCASE_EASE;
+  el.style.transform   = 'scaleX(0)';
+}
+
+function svcUnderlineExpand(ms) {
+  var el = document.getElementById('showcaseUnderline');
+  if (!el) return;
+  el.style.transition = 'none';
+  el.style.transform   = 'scaleX(0)';
+  el.getBoundingClientRect(); // force reflow so the growth animates from 0
+  el.style.transition = 'transform ' + ms + 'ms ' + SVC_UNDERLINE_EASE;
+  el.style.transform   = 'scaleX(1)';
+}
 
 function svcShowcaseCrossfade(direction) {
   var outMs = 220, inMs = 300;
-  svcShowcaseEls().forEach(function(el) {
-    el.style.transition = 'opacity ' + outMs + 'ms ' + SVC_SHOWCASE_EASE + ', filter ' + outMs + 'ms ' + SVC_SHOWCASE_EASE;
+  var centerEl = document.getElementById('showcaseName');
+  var sideEls  = [document.getElementById('previewLeftName'), document.getElementById('previewRightName')];
+
+  // Center title gets the dreamy blur+fade; side previews just fade — plain,
+  // nothing fancy — so the active title's reveal reads as distinct.
+  centerEl.style.transition = 'opacity ' + outMs + 'ms ' + SVC_SHOWCASE_EASE + ', filter ' + outMs + 'ms ' + SVC_SHOWCASE_EASE;
+  centerEl.style.opacity    = '0';
+  centerEl.style.filter     = 'blur(' + SVC_SHOWCASE_BLUR + ')';
+  sideEls.forEach(function(el) {
+    el.style.transition = 'opacity ' + outMs + 'ms ease';
     el.style.opacity    = '0';
-    el.style.filter      = 'blur(' + SVC_SHOWCASE_BLUR + ')';
   });
+  svcUnderlineCollapse(outMs);
+
   setTimeout(function() {
     var c = categories[svcActiveIdx];
     var l = categories[svcGetSvcIdx(-1)];
@@ -3380,11 +3848,14 @@ function svcShowcaseCrossfade(direction) {
     // Double rAF so the browser commits the text swap before the fade-in starts.
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        svcShowcaseEls().forEach(function(el) {
-          el.style.transition = 'opacity ' + inMs + 'ms ' + SVC_SHOWCASE_EASE + ', filter ' + inMs + 'ms ' + SVC_SHOWCASE_EASE;
+        centerEl.style.transition = 'opacity ' + inMs + 'ms ' + SVC_SHOWCASE_EASE + ', filter ' + inMs + 'ms ' + SVC_SHOWCASE_EASE;
+        centerEl.style.opacity    = '1';
+        centerEl.style.filter     = 'blur(0px)';
+        sideEls.forEach(function(el) {
+          el.style.transition = 'opacity ' + inMs + 'ms ease';
           el.style.opacity    = '1';
-          el.style.filter      = 'blur(0px)';
         });
+        svcUnderlineExpand(inMs + 150);
       });
     });
   }, outMs);
@@ -3470,11 +3941,13 @@ function svcNavigate(direction) {
     svcLastX    = x;
     svcLastTime = now;
     svcDragDelta = x - svcDragStartX;
-    svcSlots.forEach(function(slot) {
-      var tx = svcGetBaseTx(slot.offset) + svcDragDelta;
-      slot.el.style.transition = 'none';
-      slot.el.style.transform = 'translate(calc(-50% + ' + tx + 'px), -50%)';
-    });
+    // Only the center card tracks the pointer while held — side cards stay
+    // put until a switch actually commits (svcNavigate moves everything).
+    var centerSlot = svcSlots.find(function(s) { return s.offset === 0; });
+    if (centerSlot) {
+      centerSlot.el.style.transition = 'none';
+      centerSlot.el.style.transform = 'translate(calc(-50% + ' + svcDragDelta + 'px), -50%)';
+    }
     // Title is intentionally untouched here — it only reacts once a switch
     // commits (svcNavigate -> svcShowcaseCrossfade), not on every drag frame.
   }
@@ -3489,7 +3962,8 @@ function svcNavigate(direction) {
       svcNavigate(dir);
     } else {
       svcDragDelta = 0;
-      svcSlots.forEach(function(slot) { svcApplyStyle(slot.el, slot.offset, 0, true); });
+      var centerSlot = svcSlots.find(function(s) { return s.offset === 0; });
+      if (centerSlot) svcApplyStyle(centerSlot.el, 0, 0, true);
     }
   }
 
@@ -3619,9 +4093,35 @@ initCourseRail();
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js"></script>
+<script>
+// Shared scroll-distance constants for the hero -> services -> reviews
+// sequence, defined once here (synchronously, before either the hero IIFE or
+// initServicesReveal()'s script block runs) so neither has to guess whether
+// the other has already run — both read from these instead of duplicating
+// their own local copies.
+window.HERO_ORIG_VH    = 4.5;  // badge-morph + darken, unchanged since introduced
+window.SVC_HOLD_VH     = 1.2;  // #services' own bottom-up warp-in reveal lives in this window — 2.4 (round 1) needed 3 scroll gestures to clear; dialed back so one normal scroll/flick completes it, while still reading as slightly more deliberate than the original flat 1
+window.SVC_BLACKOUT_VH = 0.6;  // video scrim ramps to fully opaque
+window.SVC_WARPOUT_VH  = 0.7;  // #services' own content warps away
+window.SVC_WARPIN_VH   = 0.8;  // #reviews' text warps into place
+window.SVC_PIN_VH_MULT  = window.SVC_HOLD_VH + window.SVC_BLACKOUT_VH + window.SVC_WARPOUT_VH + window.SVC_WARPIN_VH;
+window.HERO_PIN_VH_MULT = window.HERO_ORIG_VH + window.SVC_PIN_VH_MULT;
+
+// Reviews -> Courses handoff: step-triggered autoplay, not scroll-scrubbed.
+// RVW_STREAM_VH is the only remaining scroll-DISTANCE constant here — how far
+// the user scrolls to stream all the review cards, and also the threshold
+// initReviewsReveal()'s onUpdate step-detection watches for to know the
+// stream is done. Everything past that point (overlay, corner-bounce, hold,
+// release+corner-FLIP, courses cascade) is autoplay timeline duration
+// (seconds), not scroll position, and lives entirely inside
+// initReviewsReveal() — #courses no longer has its own pin.
+window.RVW_STREAM_VH = 3;
+</script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, CustomEase);
+  CustomEase.create('spring', '0.22,0.8,0.32,1');
   // Mobile pin stability. ignoreMobileResize: the iOS/Android URL-bar
   // collapse fires resize mid-scroll, and the resulting ScrollTrigger.refresh
   // re-measured every pin while pinned — that's the "page jumps / sections
@@ -3846,6 +4346,7 @@ document.addEventListener("DOMContentLoaded", () => {
   (function() {
     const hero       = document.getElementById('hero');
     const hsStage    = document.getElementById('hsStage');
+    const vmMask     = document.getElementById('vmMask');
     const vmWrap     = document.getElementById('vmWrap');
     const vmVideo    = document.getElementById('vmVideo');
     const vmVignette = document.getElementById('vmVignette');
@@ -3858,13 +4359,35 @@ document.addEventListener("DOMContentLoaded", () => {
     const vrAudioLbl = document.getElementById('vrAudioLabel');
     const vrDarken   = document.getElementById('vrDarken');
     const vmFadeOut  = document.getElementById('vmFadeOut');
-    if (!hero || !vmWrap || !vmVideo || !badge) return;
+    const svcSection = document.getElementById('services');
+    if (!hero || !vmWrap || !vmMask || !vmVideo || !badge) return;
+
+    // hero-vid.mp4 is a compilation and cuts to plain wide/establishing shots
+    // (bare wall, a flat-lay lash tray, talking-to-camera moments) at several
+    // points across its ~46s runtime — any of those read as a jarring grey/
+    // neutral flash whenever caught by the circular reveal. 5.8–18.3s is a
+    // verified-clean stretch of tight, color-rich treatment close-ups only —
+    // loop both playbacks inside just that window instead of the whole clip.
+    const HERO_VID_LOOP_START = 5.8;
+    const HERO_VID_LOOP_END   = 18.3;
+    function loopWithinCleanRange(video) {
+      video.currentTime = HERO_VID_LOOP_START;
+      video.addEventListener('loadedmetadata', () => {
+        if (video.currentTime < HERO_VID_LOOP_START || video.currentTime >= HERO_VID_LOOP_END) {
+          video.currentTime = HERO_VID_LOOP_START;
+        }
+      });
+      video.addEventListener('timeupdate', () => {
+        if (video.currentTime >= HERO_VID_LOOP_END) video.currentTime = HERO_VID_LOOP_START;
+      });
+    }
 
     // Play badge video immediately on load
     const vbVid = badge.querySelector('.vb-video');
-    if (vbVid) vbVid.play().catch(() => {});
+    if (vbVid) { loopWithinCleanRange(vbVid); vbVid.play().catch(() => {}); }
 
     // Play vm video when hero enters view (once — disconnect after first play)
+    loopWithinCleanRange(vmVideo);
     const _vmObs = new IntersectionObserver(
       (entries) => entries.forEach(e => {
         if (e.isIntersecting) { vmVideo.play().catch(() => {}); _vmObs.disconnect(); }
@@ -3877,9 +4400,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function _onViewportChange() {
       clearTimeout(_resizeTimer);
       _resizeTimer = setTimeout(() => {
-        // Guard iOS URL-bar height jitter: only rebuild + refresh on real WIDTH
-        // change, so scroll-driven toolbar collapse doesn't thrash the layout.
-        if (Math.abs(window.innerWidth - _lastW) <= 1) return;
+        // Guard iOS URL-bar height jitter: only rebuild the carousel on real
+        // WIDTH change, so scroll-driven toolbar collapse doesn't thrash the
+        // layout. A height-only change (the toolbar itself) still needs a
+        // cheap refresh though — #hero's live height sync (syncHeroMinHeight)
+        // needs ScrollTrigger to re-measure against it, or the pinned box and
+        // the video's clip-path math (which already uses live innerHeight)
+        // drift apart, leaving a thin undimmed strip at the bottom edge.
+        if (Math.abs(window.innerWidth - _lastW) <= 1) { ScrollTrigger.refresh(); return; }
         _lastW = window.innerWidth;
         if (typeof svcComputeLayout === 'function') { svcComputeLayout(); svcInit(); }
         // Carousel DOM was just rebuilt — re-bind the scrubbed reveal to the new
@@ -3904,6 +4432,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // so the hero can never be taller than what's actually on screen.
     function syncHeroMinHeight() {
       hero.style.minHeight = (window.innerHeight < 680 ? window.innerHeight : 680) + 'px';
+      // #hero's CSS height (100svh) is a STATIC unit — it doesn't track a
+      // mobile browser's toolbar auto-hiding mid-scroll, while everything
+      // that clips/darkens/scrims the video (coverageRadius(), getBadgeCenter())
+      // already uses LIVE window.innerHeight. If the toolbar hides and live
+      // innerHeight grows past 100svh, #hero's (overflow:hidden, pinned) box
+      // stays the old, shorter size — leaving a strip at the true bottom of
+      // the viewport that falls entirely outside it, showing whatever's
+      // stacked behind instead of the intended dimmed video. Pin #hero's
+      // actual height to live innerHeight directly so the two can never drift.
+      hero.style.height = window.innerHeight + 'px';
     }
     syncHeroMinHeight();
     window.addEventListener('resize', syncHeroMinHeight);
@@ -3917,6 +4455,8 @@ document.addEventListener("DOMContentLoaded", () => {
         cx: bR.left - sR.left + bR.width  / 2,
         cy: bR.top  - sR.top  + bR.height / 2,
         r:  bR.width * 0.40,   // start aperture ≈ badge media radius (66px at 163px badge)
+        stageW: sR.width,
+        stageH: sR.height,
       };
     }
 
@@ -3932,157 +4472,901 @@ document.addEventListener("DOMContentLoaded", () => {
       return Math.ceil(Math.sqrt(w * w + h * h));
     }
 
-    // Set clip-path and ring to the real badge position before each render
-    function initPos() {
+    // #vmMask's own (unscaled) radius — its box is always built to exactly
+    // this size, centered on badgePos, so scale:1 always means "fullscreen"
+    // regardless of when this was last recomputed.
+    let maskR = coverageRadius();
+
+    // Recomputes badgePos + repositions/resizes vmRing, vmMask, vmWrap — safe
+    // to re-run on every ScrollTrigger refresh. Only geometry (left/top/
+    // width/height/transform-origin), never scale — scale is owned entirely
+    // by maskProxy/onUpdate below, so a refresh never stomps mid-scroll
+    // progress.
+    //
+    // Positioning math: #vmMask is a 2*maskR square centered on badgePos, so
+    // its default transform-origin (50% 50%) lands exactly on badgePos for
+    // free. #vmWrap (vmMask's child) is offset by (maskR-cx, maskR-cy) so its
+    // own layout box lands at true hsStage (0,0) — i.e. vmWrap's local
+    // coordinate system becomes numerically identical to hsStage's — with
+    // its transform-origin explicitly pinned to the SAME badgePos point in
+    // that system. That shared origin is what makes vmMask's scale(s) and
+    // vmWrap's counter-scale(1/s) cancel to an exact identity for the video
+    // content at every value of s (verified algebraically) — the video never
+    // visually distorts, only the circular aperture grows.
+    function updateBadgePos() {
       badgePos = getBadgeCenter();
-      vmWrap.style.clipPath = `circle(${badgePos.r}px at ${badgePos.cx}px ${badgePos.cy}px)`;
+      maskR = coverageRadius();
       gsap.set(vmRing, { left: badgePos.cx, top: badgePos.cy, xPercent: -50, yPercent: -50 });
+      gsap.set(vmMask, {
+        left: badgePos.cx - maskR, top: badgePos.cy - maskR,
+        width: maskR * 2, height: maskR * 2,
+      });
+      gsap.set(vmWrap, {
+        left: maskR - badgePos.cx, top: maskR - badgePos.cy,
+        width: badgePos.stageW, height: badgePos.stageH,
+        transformOrigin: `${badgePos.cx}px ${badgePos.cy}px`,
+      });
+    }
+
+    // Single driving value for both vmMask's scale and vmWrap's counter-
+    // scale — must stay one proxy, not two independently-eased tweens (see
+    // the comment on the heroTL tween below for why).
+    const maskProxy = { s: 1 };
+
+    // Sets the SMALL starting circle. Only correct at the very start (scroll
+    // position 0) — must NEVER be re-run mid-scroll (see onRefresh below for
+    // why this used to glitch when this set clip-path directly).
+    function initPos() {
+      updateBadgePos();
+      maskProxy.s = badgePos.r / maskR;
+      gsap.set(vmMask, { scale: maskProxy.s });
+      gsap.set(vmWrap, { scale: 1 / maskProxy.s });
     }
     initPos();
 
     // Proxy for slowing the CSS ring spin during scroll
     const spinProxy = { dur: 22 };
 
-    gsap.timeline({
+    // Hero's own pin runs LONGER than its internal animation alone needs
+    // (HERO_ORIG_VH), so it stays position:fixed — and the video stays
+    // visibly on screen — for the ENTIRE duration #services is pinned on top
+    // of it (now including the blackout/warp-out/warp-in sequence), instead
+    // of scrolling away the instant #services engages (confirmed live: once
+    // this pin released, #hero returned to position:relative and the video
+    // scrolled away normally — no opacity tuning on #services could have
+    // kept it visible while that was happening). K rescales every existing
+    // fraction/duration below so they still land at the same absolute scroll
+    // distances as before, compressed into the first K of the new, longer 0-1
+    // range; a hold tween covers the new extra tail (K -> 1.0). Both totals
+    // are read from the shared window.* constants (set once, synchronously,
+    // before this script runs) so #services' own marginTop pull-up
+    // (initServicesReveal()), #reviews' marginTop pull-up, and the
+    // reviveServicesReveal() pin-safety guard all stay in lockstep with this
+    // timeline if these durations ever change again.
+    const HERO_ORIG_VH  = window.HERO_ORIG_VH;
+    const HERO_TOTAL_VH = window.HERO_PIN_VH_MULT;
+    const K = HERO_ORIG_VH / HERO_TOTAL_VH;
+    const VIDEO_SCRIM_OPACITY = 0.6;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const heroTL = gsap.timeline({
       scrollTrigger: {
         trigger: hero,
         start: 'top top',
-        end: () => '+=' + (window.innerHeight * 4.5),
+        end: () => '+=' + (window.innerHeight * HERO_TOTAL_VH),
         scrub: 1.2,
         pin: true,
         pinSpacing: true,
         anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
         invalidateOnRefresh: true,
-        onRefresh: initPos,
+        // initPos() (the tiny badge circle) must only ever run at true scroll
+        // position 0 — it already did, via its own call right after
+        // definition. On every SUBSEQUENT refresh, GSAP's own scrub tween
+        // has already correctly re-rendered maskProxy.s for the current
+        // scroll progress by the time onRefresh fires (per
+        // invalidateOnRefresh) — so this only needs to refresh badgePos
+        // (layout may have shifted) and force heroTL to re-render using the
+        // fresh value, never touch the raw tiny-circle scale again. Skipping
+        // this and calling initPos() directly here was the root cause of a
+        // real bug (originally against the old clip-path implementation, but
+        // the hazard is identical for the scale-based one): any
+        // ScrollTrigger.refresh() firing while scrolled deep into #services
+        // (resize, tab visibility change, bfcache restore, late fonts.ready)
+        // would stomp the correct circle back to the tiny starting size,
+        // visibly stuck (rest of screen black) until the next scroll input.
+        onRefresh: () => {
+          updateBadgePos();
+          heroTL.progress(heroTL.progress());
+        },
         // scrub(1.2) lets the eased tween values lag up to ~1.2s behind raw
         // scroll — the pin releases the instant raw scroll reaches `end`
-        // regardless of how far that lag has caught up (confirmed live: on a
-        // fast/instant scroll the pin can release while vmFadeOut is still
-        // mid-fade, e.g. opacity 0.98). Force both dark layers to their fully
-        // resolved state the instant the pin releases, so the hand-off is
-        // guaranteed solid black at any scroll speed instead of occasionally
-        // yanking away a still-mid-fade frame.
-        onLeave:             () => { gsap.set([vrDarken, vmFadeOut], { opacity: 1 }); vrAudioBtn.classList.add('visible'); },
-        onEnterBack:         () => vrAudioBtn.classList.add('visible'),
-        onLeaveBack:         () => vrAudioBtn.classList.remove('visible'),
+        // regardless of how far that lag has caught up. This now fires at the
+        // very end of the full blackout->warp-out->warp-in sequence (hero's
+        // pin and #services' own pin release together, by construction), so
+        // the fully resolved state for vmFadeOut is fully opaque (1), not the
+        // mid-sequence scrim value — force everything to that final state so
+        // the hand-off is guaranteed solid at any scroll speed instead of
+        // occasionally yanking away a still-mid-fade frame.
+        // The video must NEVER pause, at any scroll position — it just keeps
+        // playing continuously, muted/looping, regardless of visibility.
+        onLeave: () => {
+          gsap.set(vrDarken, { opacity: 1 });
+          gsap.set(vmFadeOut, { opacity: 1 });
+          gsap.set(vrAudioBtn, { opacity: 0 });
+          vrAudioBtn.classList.remove('visible');
+        },
+        onEnterBack: () => {
+          vrAudioBtn.classList.add('visible');
+          vmVideo.play().catch(() => {});
+        },
+        onLeaveBack: () => vrAudioBtn.classList.remove('visible'),
       }
     })
 
-    // 0–7.1%: vm-wrap + vm-ring fade in (seamless takeover from badge), badge media fades out
-    .to(vmWrap,  { opacity: 1, ease: 'none', duration: 0.0711 }, 0)
-    .to(vmRing,  { opacity: 1, ease: 'none', duration: 0.0711 }, 0)
-    .to(vbMedia, { opacity: 0, ease: 'none', duration: 0.0711 }, 0)
+    // 0–7.1%: vm-mask + vm-ring fade in (seamless takeover from badge), badge media fades out
+    .to(vmMask,  { opacity: 1, ease: 'none', duration: 0.0711 * K }, 0)
+    .to(vmRing,  { opacity: 1, ease: 'none', duration: 0.0711 * K }, 0)
+    .to(vbMedia, { opacity: 0, ease: 'none', duration: 0.0711 * K }, 0)
 
     // 0–16%: ring text fades out, CSS spin slows to a near-stop (wind-down feel)
-    .to(vbRing, { opacity: 0, ease: 'power2.in', duration: 0.16 }, 0)
+    .to(vbRing, { opacity: 0, ease: 'power2.in', duration: 0.16 * K }, 0)
     .to(spinProxy, {
       dur: 240,
       ease: 'power2.in',
-      duration: 0.16,
+      duration: 0.16 * K,
       onUpdate() { vbRing.style.animationDuration = spinProxy.dur + 's'; },
     }, 0)
 
     // 7.1–16%: hero card peels up after badge starts moving.
     // Peel distance is bounded to ~10vh so it stays proportional on short screens
     // (identical to the 80px desktop value at ≥800px tall).
-    .to(heroCard, { y: () => -Math.min(80, window.innerHeight * 0.10), opacity: 0, ease: 'power2.in', duration: 0.0889 }, 0.0711)
+    .to(heroCard, { y: () => -Math.min(80, window.innerHeight * 0.10), opacity: 0, ease: 'power2.in', duration: 0.0889 * K }, 0.0711 * K)
 
     // 4.4–41.8%: stage darkens behind the growing circle — everything outside the
     // video dims toward black as it opens, instead of the plain crossfade.
-    .to(vrDarken, { opacity: 1, ease: 'power2.out', duration: 0.3733 }, 0.0444)
+    .to(vrDarken, { opacity: 1, ease: 'power2.out', duration: 0.3733 * K }, 0.0444 * K)
 
     // SINGLE PHASE — 0–55.1%: circle expands directly from the badge's resting
     // position to fullscreen. No travel-to-center step — it grows in place,
-    // eased throughout (power2.inOut: gentle start, gentle settle).
-    .to(vmWrap, {
-      clipPath: () => `circle(${coverageRadius()}px at ${badgePos.cx}px ${badgePos.cy}px)`,
+    // eased throughout (power2.inOut: gentle start, gentle settle). Driven by
+    // one proxy value that sets vmMask's scale and vmWrap's counter-scale
+    // together in the same onUpdate — never as two separately-eased tweens,
+    // since 1/ease(p) != ease(1/target) and they'd visibly mismatch
+    // mid-transition (the same "two animations racing" bug class already
+    // hit once below for vmRing).
+    .to(maskProxy, {
+      s: 1,
       ease: 'power2.inOut',
-      duration: 0.5511,
+      duration: 0.5511 * K,
+      onUpdate() {
+        gsap.set(vmMask, { scale: maskProxy.s });
+        gsap.set(vmWrap, { scale: 1 / maskProxy.s });
+      },
     }, 0)
+    // Scale-based (not width/height) — a layout-property tween racing the
+    // xPercent/yPercent centering transform (updateBadgePos(), which
+    // recomputes each frame against the ring's CURRENT rendered size) can
+    // read back stale dimensions for a frame, producing a growing pixel
+    // offset that becomes visible once the ring is large enough (confirmed:
+    // showed as a square glitch in the top-left past ~40% of this tween).
+    // transform:scale composites in the SAME step as xPercent/yPercent with
+    // no layout readback involved, so the two can never desync.
     .to(vmRing, {
-      width:  () => coverageRadius() * 2,
-      height: () => coverageRadius() * 2,
+      scale: () => (coverageRadius() * 2) / 132,
       ease: 'power2.inOut',
-      duration: 0.5511,
+      duration: 0.5511 * K,
     }, 0)
 
     // 35.6–56.9%: video scale settles as the circle nears fullscreen
-    .to(vmVideo, { scale: 1, ease: 'power2.out', duration: 0.2133 }, 0.3556)
+    .to(vmVideo, { scale: 1, ease: 'power2.out', duration: 0.2133 * K }, 0.3556 * K)
 
     // 51.6–64%: vignette fades in once fullscreen
-    .to(vmVignette, { opacity: 1, ease: 'power2.out', duration: 0.1244 }, 0.5156)
+    .to(vmVignette, { opacity: 1, ease: 'power2.out', duration: 0.1244 * K }, 0.5156 * K)
 
-    // 55.1–62.2%: mute button appears right after the video fills the screen
+    // 55.1%: mute button pops in essentially immediately once the video
+    // fills the screen — a short, snappy duration (not the old 0.0711*K
+    // window) so it reads as "appears immediately" even under heroTL's own
+    // scrub:1.2 lag, rather than a gradual fade the user has to scroll through.
     .to(vrAudioBtn, {
       opacity: 1,
       ease: 'power2.out',
-      duration: 0.0711,
+      duration: 0.02 * K,
       onStart:           () => vrAudioBtn.classList.add('visible'),
       onReverseComplete: () => vrAudioBtn.classList.remove('visible'),
-    }, 0.5511)
+    }, 0.5511 * K);
 
-    // 62.2–68%: fully expanded — video just plays, fullscreen, no overlay motion.
-    // This hold is the "keep the video visible longer" window the old timing
-    // was skipping past on its way to a too-early blackout.
+    // From here on: fully expanded — video just plays, fullscreen, no overlay
+    // blackout yet. It only dims to a translucent scrim (below) once
+    // #services arrives on top of it, staying visible (dimmed) for the
+    // remainder of this pin. #services itself is always background:
+    // transparent (see its CSS rule) — the darkening lives entirely on the
+    // video layer, not on #services, so #services' own content is never
+    // tinted along with the video.
 
-    // 68–88%: fade everything to black, finishing with a ~12%-of-timeline
-    // margin before the pin's own end instead of landing exactly on it.
-    // scrub(1.2) lets the animated value lag up to ~1.2s behind raw scroll —
-    // GSAP releases the pin the instant raw scroll reaches `end`, regardless
-    // of how far the lagged tween has actually eased. Finishing early leaves
-    // a hold-at-full-black buffer so a fast scroll can't outrun the fade and
-    // yank away a still-mid-fade frame right as the pin releases. power2.out
-    // (front-loaded) instead of the old sine.in (back-loaded) puts most of
-    // the darkening at the start of this window instead of right at the end,
-    // for the same reason.
-    .to(vmFadeOut, { opacity: 1, ease: 'power2.out', duration: 0.20 }, 0.68)
-    .to(vrAudioBtn, { opacity: 0, ease: 'power2.in', duration: 0.10 }, 0.68);
+    if (!prefersReducedMotion) {
+      // 77.8%*K–85%*K: once #services has slid into place, the video itself
+      // (vmFadeOut, the same var(--bg)-colored layer that used to fade it
+      // fully to black) darkens smoothly (scroll-scrubbed) to a translucent
+      // scrim — dark enough for legible text over it, but the video stays
+      // clearly visible through it. Living on THIS timeline/ScrollTrigger
+      // (same scrub:1.2 as vrDarken) is deliberate: it guarantees the video's
+      // darken state can't desync from anything else driven by the same
+      // shared scrub proxy, the way two independently-scrubbed triggers could
+      // (see git history: commit 3e46ec8, the "sliver" bug).
+      const SCRIM_RAMP_POS = 0.7778 * K;
+      const SCRIM_RAMP_DUR = 0.0722 * K;
+      heroTL.to(vmFadeOut, { opacity: VIDEO_SCRIM_OPACITY, ease: 'power2.out', duration: SCRIM_RAMP_DUR }, SCRIM_RAMP_POS);
+      // Mute button fades out in lockstep with the SAME scrim-ramp tween
+      // above (identical position/duration) rather than the later blackout
+      // phase — it's meant to disappear the moment the video starts
+      // darkening for #services to appear, not linger through the whole
+      // scrim hold. On scroll-back this scrub tween reverses automatically,
+      // so the button only reappears once vmFadeOut has eased all the way
+      // back down to 0 (video fully undarkened again) — never mid-darken.
+      heroTL.to(vrAudioBtn, {
+        opacity: 0, ease: 'power2.in',
+        duration: SCRIM_RAMP_DUR,
+        onComplete:        () => vrAudioBtn.classList.remove('visible'),
+        onReverseComplete: () => vrAudioBtn.classList.add('visible'),
+      }, SCRIM_RAMP_POS);
 
-    // Reviews content: subtle staggered blur-up reveal, timed to just before the
-    // section pins. Title → headline → paragraph → button rise from below as a
-    // soft blur clears to focus.
-    gsap.to('.reviews-title, .reviews-headline, .reviews-desc, .reviews-btn', {
-      opacity: 1,
-      y: 0,
-      filter: 'blur(0px)',
-      duration: 0.85,
-      ease: 'power2.out',
-      stagger: 0.12,
-      scrollTrigger: {
-        trigger: '#reviews',
-        start: 'top 60%',
-        toggleActions: 'play none none none',
-        invalidateOnRefresh: true,
-      }
-    });
+      // If sound is on, it fades out gradually over the same darken-to-black
+      // journey the video takes visually (scrim ramp through #services'
+      // blackout, ending exactly when the video is fully hidden) — scrolling
+      // further just keeps turning it down, rather than an abrupt hard-mute
+      // on the very next scroll tick. Reverses the same way on scroll-back.
+      // vmVideo.muted stays the real on/off switch (autoplay requires it
+      // start muted); `.volume` is what's scrubbed here — onUpdate (not
+      // onComplete/onReverseComplete) keeps `.muted` continuously in sync
+      // with it in BOTH directions, since muted audio stays silent no matter
+      // what `.volume` is: gating unmute on reverse-complete alone would
+      // leave sound silent for the entire climb back up, then snap in at
+      // full volume right at the top instead of fading in as you scroll back.
+      const AUDIO_FADE_END = K + (window.SVC_HOLD_VH + window.SVC_BLACKOUT_VH) / HERO_TOTAL_VH;
+      heroTL.to(vmVideo, {
+        volume: 0, ease: 'none',
+        duration: AUDIO_FADE_END - SCRIM_RAMP_POS,
+        onUpdate: () => {
+          if (vmVideo.volume <= 0.001) {
+            vmVideo.muted = true;
+          } else if (!vrAudioBtn.classList.contains('muted')) {
+            vmVideo.muted = false;
+          }
+        },
+      }, SCRIM_RAMP_POS);
+    }
+
+    // K–100%: explicit hold, re-anchoring the timeline's total duration to
+    // exactly 1.0 regardless of reduced-motion. GSAP scrub timelines map
+    // ScrollTrigger progress (0-1) onto the timeline's OWN total duration (the
+    // furthest end-time among all tweens); without this explicit tail, the
+    // duration would silently shrink to whatever the last tween above ends at,
+    // proportionally rescaling every earlier beat in this chain too (hit twice
+    // already before this rewrite). Reduced-motion users hold vrDarken
+    // (already 1, inert) instead — vmFadeOut never ramped for them in the
+    // first place (skipped above), so it must not be touched here either.
+    heroTL.to(vrDarken,
+      { opacity: 1, ease: 'none', duration: 1 - K },
+      K);
+    if (!prefersReducedMotion) {
+      // Holds the scrim for ONLY the unchanged static-hold portion of the
+      // tail (SVC_HOLD_VH) — from SVC_BLACKOUT_VH onward, #services' own `tl`
+      // (initServicesReveal()) takes over driving vmFadeOut through blackout,
+      // warp-out, and warp-in. Two timelines must never both write opacity on
+      // the same element over overlapping scroll range (the same "two scrub
+      // sources racing" failure class the shared-timeline design above
+      // exists to avoid) — this cedes vmFadeOut to #services' `tl` cleanly at
+      // the boundary instead of holding it here for the whole extended tail.
+      heroTL.to(vmFadeOut, {
+        opacity: VIDEO_SCRIM_OPACITY, ease: 'none',
+        duration: window.SVC_HOLD_VH / HERO_TOTAL_VH,
+      }, K);
+    }
+
+    // Reviews content's reveal (title -> headline -> desc -> button) has moved
+    // to the scrubbed, reversible warp-in sequence in initServicesReveal()'s
+    // `tl` — it used to be a one-shot, non-reversible tween here.
 
     // Reviews: pin for PIN_MULT viewport-heights so all cards can stream through.
     // GSAP's built-in pin auto-creates a spacer that pushes #courses down by the
     // full pin duration, so courses only appears after the last card has exited.
-    (function () {
-      const PIN_MULT = 3; // total scroll = 3 × viewport while cards stream
-
-      ScrollTrigger.create({
-        trigger: '#reviews',
-        start: 'top top',
-        end: () => '+=' + (window.innerHeight * PIN_MULT),
-        pin: true,
-        pinSpacing: true,
-        anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
-        invalidateOnRefresh: true,
+    //
+    // Wrapped in a re-callable, kill-and-recreate function (mirroring
+    // initServicesReveal()'s own pattern for #services) rather than a plain
+    // one-time IIFE. Confirmed live: #reviews now also gets a marginTop
+    // pull-up (for the services->reviews warp-in overlay) — but GSAP's
+    // pin-spacer mechanism transfers a PINNED element's own marginTop onto
+    // its spacer once, at pin-CREATION time, then resets the element's own
+    // margin back to 0 whenever that pin is killed/reverted (confirmed live:
+    // this happens on ANY ScrollTrigger.refresh() too, and — critically —
+    // on kill() itself, which reverts to the margin captured at the pin's
+    // ORIGINAL creation, discarding anything set externally beforehand, no
+    // matter how immediately before the kill() call). So marginTop must be
+    // (re)set INSIDE this function, strictly AFTER the kill() calls below and
+    // BEFORE the pin is recreated — setting it from the caller's side, even
+    // right before calling this function, is NOT equivalent and does not
+    // work. This is also why #reviews manages its own marginTop internally
+    // (reading window.SVC_WARPIN_VH directly) rather than accepting it as an
+    // argument from initServicesReveal(), which only needs to trigger a
+    // recreation, exposed as window.initReviewsReveal for that purpose.
+    var _reviewsRevealST  = null;
+    var _reviewsRfgST     = null;
+    var _reviewsWarpInST  = null;
+    var _reviewsOverlayTL = null;
+    var _reviewsReleaseTL = null;
+    var _reviewsSettleTimer      = null; // idle-commit debounce before shrinking the pin's `end`
+    var _reviewsScrollEndHandler = null; // scrollend fast-path for the same commit
+    function initReviewsReveal() {
+      if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+      if (_reviewsRevealST) { _reviewsRevealST.kill(); _reviewsRevealST = null; }
+      if (_reviewsRfgST)    { _reviewsRfgST.kill();    _reviewsRfgST    = null; }
+      if (_reviewsWarpInST) { _reviewsWarpInST.kill();  _reviewsWarpInST = null; }
+      clearTimeout(_reviewsSettleTimer); _reviewsSettleTimer = null;
+      if (_reviewsScrollEndHandler) {
+        window.removeEventListener('scrollend', _reviewsScrollEndHandler);
+        _reviewsScrollEndHandler = null;
+      }
+      // Defensive: overlayTL/releaseTL from a prior invocation are dropped by
+      // this closure but not automatically stopped — kill them explicitly so
+      // a re-invocation (preloader exit, fonts ready, resize) can never leave
+      // a stale autoplay timeline alive underneath the new one.
+      if (_reviewsOverlayTL) { _reviewsOverlayTL.kill(); _reviewsOverlayTL = null; }
+      if (_reviewsReleaseTL) { _reviewsReleaseTL.kill(); _reviewsReleaseTL = null; }
+      // Defensive: an earlier build of this sequence gave #courses its own
+      // pin — kill any leftover instance found in ScrollTrigger's own
+      // registry so it can't fight the single #reviews pin below.
+      ScrollTrigger.getAll().forEach(function (st) {
+        if (st.pin && st.trigger && st.trigger.id === 'courses') st.kill();
       });
+
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // No more lead — #services now fully finishes and unpins before
+      // #reviews becomes sticky at all (the WARPIN overlap is gone), so this
+      // is just the plain "+1 cancels the immediately-preceding pinned
+      // layer's own height" pull-up every other section in this chain uses.
+      // #reviews' own opacity/pointerEvents are NOT set here — this whole
+      // gsap.set() runs immediately at init time (page load), long before
+      // scroll ever reaches this pin, so setting opacity:1 here made
+      // #reviews' background visible from the very start instead of only
+      // once #services actually finishes (confirmed live: this is what
+      // caused "the review background appears a little early"). They're
+      // set inside warpInTL instead (below), a scroll-linked/scrubbed
+      // timeline anchored to this same pin's 'top top' — GSAP syncs a
+      // scrubbed timeline's initial render to the CURRENT scroll position on
+      // creation, so its opacity:0->1 stays at 0 until scroll genuinely
+      // reaches that point. Reduced-motion users need neither: #reviews'
+      // opacity:0/pointer-events:none CSS rule is itself scoped to
+      // `prefers-reduced-motion: no-preference`, so it's already visible by
+      // CSS default for them.
+      gsap.set('#reviews', {
+        marginTop: reducedMotion ? 0 : -window.innerHeight * 1,
+      });
+      // #courses stays in normal document flow (no pull-up) until the release
+      // step positions it live — see positionCoursesForRelease() below — and
+      // stays non-interactive until then so it can't intercept clicks while
+      // still off-screen.
+      gsap.set('#courses', { pointerEvents: 'none' });
+
+      const WARPIN_VH = window.SVC_WARPIN_VH || 0; // #reviews' own text warp-in, re-homed here (was on #services' tl)
+      const STREAM    = window.RVW_STREAM_VH; // card-stream range, now owns WARPIN_VH -> WARPIN_VH+STREAM
+      const CARD_STREAM_END_VH = WARPIN_VH + STREAM; // step-0 threshold, replaces bare STREAM
+      const FRAME_PAD = 18; // breathing room between the caption's glyphs and the corner marks
+
+      const cornerFrame = document.getElementById('cornerFrame');
+      if (cornerFrame) gsap.set(cornerFrame, { opacity: 0 });
+
+      // Scroll-independent rect helpers, used as GSAP FUNCTION-VALUED tween
+      // properties below (not measured once here) so they always read the
+      // live rect at the moment each tween actually renders.
+      function getCaptionRect() {
+        var el = document.getElementById('reviewsFadeoutCaption');
+        if (!el) return { left: window.innerWidth/2 - 150, top: window.innerHeight/2 - 40, width: 300, height: 80 };
+        var r = el.getBoundingClientRect();
+        return { left: r.left - FRAME_PAD, top: r.top - FRAME_PAD, width: r.width + FRAME_PAD*2, height: r.height + FRAME_PAD*2 };
+      }
+      // positionCoursesForRelease() (below) runs immediately before this is
+      // ever read, so .courses-card is already flush/live by then — no more
+      // top:0 guess needed.
+      function getCourseCardRect() {
+        var card = document.querySelector('.courses-card');
+        if (!card) return { left: 24, top: 0, width: window.innerWidth - 48, height: window.innerHeight - 48 };
+        return card.getBoundingClientRect();
+      }
+
+      // Live-measures #courses' natural document position and pulls it up so
+      // it's genuinely flush with the viewport #reviews' pin currently
+      // occupies. Runs once, synchronously, right as the release step begins
+      // — long after page load has settled, so (unlike this file's other
+      // pull-ups, which are fixed formulas specifically because measuring
+      // during the unstable multi-call load sequence proved unreliable) a
+      // live measurement here is safe. #reviews is still pinned/fixed
+      // covering the full viewport at this instant, so the snap into place
+      // happens invisibly underneath it.
+      function positionCoursesForRelease() {
+        var courses = document.getElementById('courses');
+        if (!courses) return;
+        gsap.set(courses, { marginTop: 0 }); // reset first so the next read is the TRUE natural position
+        var naturalTop = courses.getBoundingClientRect().top + window.scrollY;
+        var targetTop  = window.scrollY;
+        // z-index:15 — above #reviews' own 11. #reviews stays pinned/fixed
+        // (covering the full viewport) for releaseTL's entire duration, so
+        // unlike the old scroll-scrubbed version (where #reviews actually
+        // unpinned the instant #courses needed to appear, no elevation
+        // needed), #courses now has to be stacked visually on top to be
+        // seen at all. Safe: both #reviews' still-opaque #reviewsFadeOut and
+        // #courses' own .courses-reveal-mask are solid var(--bg), so the
+        // stacking swap itself is visually seamless — .courses-reveal-mask
+        // is what actually performs the reveal, same as before.
+        gsap.set(courses, { marginTop: -(naturalTop - targetTop), zIndex: 15, pointerEvents: 'auto' });
+      }
+
+      // ── Step A: overlay ease-in -> title warp-in -> corner bounce-reveal.
+      // Built paused, played once in full by the state machine below — it
+      // autoplays to completion regardless of further scroll input, then
+      // just stops: nothing further is scheduled, so it stays visually
+      // "held" until Step B explicitly plays.
+      const overlayTL = gsap.timeline({ paused: true });
+      _reviewsOverlayTL = overlayTL;
+      overlayTL.addLabel('overlayIn', 0);
+      overlayTL.fromTo('#reviewsFadeOut',
+        { '--rfo-edge': '100%' },
+        { '--rfo-edge': '0%', duration: 0.4, ease: 'power4.out' },
+        'overlayIn');
+      overlayTL.addLabel('titleIn', 'overlayIn+=0.4');
+      overlayTL.fromTo('#reviewsFadeoutCaption',
+        { opacity: 0, y: 8, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.32, ease: 'power2.out' },
+        'titleIn');
+      if (cornerFrame) {
+        overlayTL.set(cornerFrame, {
+          left:   () => getCaptionRect().left,
+          top:    () => getCaptionRect().top,
+          width:  () => getCaptionRect().width,
+          height: () => getCaptionRect().height,
+          scale: 0.82,
+          transformOrigin: '50% 50%',
+        }, 'titleIn+=0.12');
+        overlayTL.to(cornerFrame,
+          // Relies on CustomEase's inline cubic-bezier parsing (CustomEase is
+          // already registered a few lines above) to accept a raw bezier
+          // string ad hoc. Fallback if that ever misbehaves: register once via
+          // CustomEase.create('bounce', '0.34,1.56,0.64,1') near 'spring' and
+          // reference ease:'bounce' here instead.
+          { opacity: 1, scale: 1, duration: 0.3, ease: 'cubic-bezier(0.34,1.56,0.64,1)' },
+          'titleIn+=0.18');
+      }
+
+      // ── Step B: title warps out + corner FLIPs onto .courses-card's real
+      // border, immediately continuing into the full courses content
+      // cascade — same content/values/eases as this handoff's previous
+      // scroll-scrubbed version, just sequential .to() calls on one autoplay
+      // timeline instead of scrub-positioned labels on a second pin.
+      const bg          = document.querySelector('.courses-bg');
+      const mask        = document.getElementById('coursesRevealMask');
+      const textEls     = ['.courses-title', '.courses-tagline', '.courses-desc', '.courses-desc-2', '.courses-btn'];
+      const cardActive  = '.course-slide.active';
+      const cardInner   = '.course-slide.active .course-card-inner';
+      const preview     = '.course-slide.preview';
+      const ellipse     = '.cert-elipse';
+      const ellipseRing = '.cert-elipse-ring';
+
+      const releaseTL = gsap.timeline({ paused: true });
+      _reviewsReleaseTL = releaseTL;
+
+      // Scales every duration/offset in the courses content cascade below
+      // (NOT the corner FLIP itself, which has its own fixed 1.3s landing —
+      // see the ask that it stay slow/dramatic while the content cascade
+      // tightens up). Round 1 used 1.7 across ~6 sequential labeled beats,
+      // which read as "reveals everything one by one" and took 4+ seconds —
+      // dropped here alongside regrouping into two beats (upper copy, then
+      // cards) instead of six.
+      const RELEASE_PACE = 0.9;
+
+      releaseTL.addLabel('release', 0);
+      releaseTL.to('#reviewsFadeoutCaption',
+        { opacity: 0, y: -10, filter: 'blur(8px)', duration: 0.32 * RELEASE_PACE, ease: 'power2.in' },
+        'release');
+      if (cornerFrame) {
+        releaseTL.to(cornerFrame, {
+          left:   () => getCourseCardRect().left,
+          top:    () => getCourseCardRect().top,
+          width:  () => getCourseCardRect().width,
+          height: () => getCourseCardRect().height,
+          // Deliberately much slower than the rest of RELEASE_PACE's uniform
+          // stretch, and switched off the overshoot spring to a dramatic,
+          // monotonic deceleration — the corner expansion is the most
+          // eye-catching beat in the whole release, so it's the one that
+          // most needs to visibly slow the user down rather than snap.
+          duration: 1.3,
+          ease: 'expo.out',
+        }, 'release');
+        // Fade only AFTER landing — .courses-card's real border is already
+        // sitting there the whole time, so this reads as "absorbed by it."
+        // 0.88 matches the original ratio (fade started at 88% of the FLIP's
+        // own duration), now against the FLIP's new 1.3s length.
+        releaseTL.to(cornerFrame, { opacity: 0, duration: 0.3, ease: 'power1.out' }, 'release+=1.14');
+
+        // Morph the sharp brackets into .courses-card's own 16px radius as
+        // they land, in the FLIP's final ~30% — instead of staying hard-
+        // cornered right up until they fade and get replaced by the
+        // already-rounded card underneath. Each mark only draws ONE corner
+        // (see the CSS comment on .corner-mark for why radius stays 0 at
+        // rest), so only that mark's own drawn corner needs the tween.
+        const cornerRadiusTargets = [
+          [cornerFrame.querySelector('.corner-tl'), 'borderTopLeftRadius'],
+          [cornerFrame.querySelector('.corner-tr'), 'borderTopRightRadius'],
+          [cornerFrame.querySelector('.corner-bl'), 'borderBottomLeftRadius'],
+          [cornerFrame.querySelector('.corner-br'), 'borderBottomRightRadius'],
+        ];
+        cornerRadiusTargets.forEach(([mark, prop]) => {
+          if (!mark) return;
+          releaseTL.set(mark, { [prop]: 0 }, 'release');
+          releaseTL.to(mark, { [prop]: 16, duration: 0.4, ease: 'power2.out' }, 'release+=0.9');
+        });
+      }
+
+      // Defensive reset — snaps all courses content to hidden right as the
+      // FLIP starts, regardless of whatever state a prior run left these in.
+      // cardActive itself stays opacity:1 (not hidden) — it's just the
+      // container now; its own ::before rotating gold border is hidden via
+      // the dedicated --card-border-opacity custom property instead (see
+      // the CSS comment on .course-slide.active::before), so it can be
+      // revealed on its own schedule, independent of cardInner's fade.
+      if (bg) releaseTL.set(bg, { scale: 1.06 }, 'release');
+      releaseTL.set(textEls, { opacity: 0, y: 24, scale: 0.96, filter: 'blur(8px)' }, 'release');
+      releaseTL.set(cardActive, { opacity: 1, '--card-border-opacity': 0 }, 'release');
+      releaseTL.set(cardInner, { opacity: 0, y: 24, scale: 0.94, filter: 'blur(10px)' }, 'release');
+      releaseTL.set(preview, { opacity: 0 }, 'release');
+      // Deeper starting scale than the other elements (0.5, not the usual
+      // ~0.9) — this one needs to visibly EXPAND open at center, not just
+      // fade/settle, since it leads the cascade below.
+      releaseTL.set(ellipse, { opacity: 0, scale: 0.5, filter: 'blur(8px)' }, 'release');
+      releaseTL.set(ellipseRing, { opacity: 0 }, 'release');
+
+      // ── overlayOut: mask fades away WHILE .courses-bg scale-settles. Starts
+      // shortly after the corners begin moving (not after they land) — "as
+      // soon as the corners go, of course the background appears" — rather
+      // than waiting for the full FLIP to finish. Offset now scaled against
+      // the corner FLIP's own new 1.3s duration, same ~36% ratio as before.
+      releaseTL.addLabel('overlayOut', 'release+=0.47');
+      if (mask) releaseTL.to(mask, { opacity: 0, duration: 0.6 * RELEASE_PACE, ease: 'power2.out' }, 'overlayOut');
+      if (bg)   releaseTL.to(bg,   { scale: 1, duration: 0.6 * RELEASE_PACE, ease: 'power2.out' }, 'overlayOut');
+
+      // ── Two beats, not six: the "upper half" (ellipse + left copy) reveals
+      // together as one coordinated batch, then the cards — instead of the
+      // old ellipse -> title -> tagline/desc/button -> card -> preview ->
+      // border chain of six sequential labels, which read as "one by one."
+      //
+      // Ellipse leads by a hair (it's the section's dead-center splitter, on
+      // the same overshoot ease as the corner FLIP), with everything else in
+      // this batch starting within a tight window right behind it rather than
+      // its own fully-sequential label. .cert-elipse-ring stays opacity-only,
+      // deliberately no scale/transform: it carries its own continuous CSS
+      // animation (vb-spin 22s linear infinite) which owns `transform`
+      // outright while running — a GSAP transform tween on the same
+      // element/property would be silently overridden by the running
+      // keyframe, so opacity is both the safe property AND matches the ask:
+      // the ring simply fades into its already-ongoing rotation.
+      releaseTL.addLabel('coursesUpper', `overlayOut+=${(0.2 * RELEASE_PACE).toFixed(2)}`);
+      releaseTL.to(ellipse,
+        { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.55 * RELEASE_PACE, ease: 'cubic-bezier(0.34,1.56,0.64,1)' },
+        'coursesUpper');
+      releaseTL.to(ellipseRing,
+        { opacity: 1, duration: 0.4 * RELEASE_PACE, ease: 'power2.out' },
+        `coursesUpper+=${(0.1 * RELEASE_PACE).toFixed(2)}`);
+      releaseTL.to('.courses-title',
+        { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.5 * RELEASE_PACE, ease: 'power2.out' },
+        `coursesUpper+=${(0.05 * RELEASE_PACE).toFixed(2)}`);
+      releaseTL.to(['.courses-tagline', '.courses-desc', '.courses-desc-2', '.courses-btn'],
+        { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', stagger: 0.06 * RELEASE_PACE, duration: 0.45 * RELEASE_PACE, ease: 'power2.out' },
+        `coursesUpper+=${(0.12 * RELEASE_PACE).toFixed(2)}`);
+
+      // ── Cards: the second and final beat, starting shortly after the
+      // upper-half batch begins (a modest overlap, not waiting for it to
+      // fully finish) rather than a third sequential wait.
+      releaseTL.addLabel('coursesCards', `coursesUpper+=${(0.3 * RELEASE_PACE).toFixed(2)}`);
+      releaseTL.to(cardInner,
+        { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.6 * RELEASE_PACE, ease: 'power2.out' },
+        'coursesCards');
+      releaseTL.to(preview,
+        { opacity: 1, duration: 0.35 * RELEASE_PACE, ease: 'power2.out' },
+        `coursesCards+=${(0.15 * RELEASE_PACE).toFixed(2)}`);
+      // Gold border reveals LAST, only once .course-card-inner underneath is
+      // already fully opaque — reads as a clean thin line appearing around
+      // an already-visible card, never a filled blob (see the CSS comment
+      // on .course-slide.active::before for why order matters here).
+      releaseTL.to(cardActive,
+        { '--card-border-opacity': 1, duration: 0.35 * RELEASE_PACE, ease: 'power2.out' },
+        `coursesCards+=${(0.4 * RELEASE_PACE).toFixed(2)}`);
+
+      // ── The pin + step-triggered state machine ──────────────────────────
+      // #reviews stays pinned for the WHOLE sequence (cards + overlay +
+      // release + courses cascade). `end` is oversized as a first line of
+      // defense, but the real lock is the active clamp below: a scroll burst
+      // fast/large enough (a hard trackpad flick, holding PageDown, etc.) can
+      // apply far more delta than any onUpdate tick has a chance to react to
+      // BEFORE the browser's own scroll position already exceeds `end` and
+      // GSAP releases the pin on its own — confirmed empirically, a large
+      // LOCK_RESERVE_VH alone does not survive an aggressive-enough flick.
+      // So instead of relying on distance alone, onUpdate actively snaps
+      // scroll back to a fixed `lockY` any time it drifts away from it while
+      // step 1 or 2 is still mid-autoplay — self.scroll(v) re-derives the
+      // pin's fixed/relative state from the corrected position on its own,
+      // so snapping back also re-engages the visual pin if a burst had
+      // already pushed it past `end`. `end` still gets shrunk to just past
+      // the current position once the release autoplay finishes, releasing
+      // the pin immediately with no further scroll input required.
+      //
+      // onUpdate fires on every raw scroll tick regardless of how much
+      // progress actually changed, which is what lets this detect "the user
+      // scrolled" (the trigger for each step) without needing a new plugin
+      // (e.g. Observer) this codebase doesn't otherwise depend on.
+      const LOCK_RESERVE_VH = 10;
+      const SNAP_TOLERANCE  = 0.5;  // px — avoids re-triggering scroll() on float noise (used by the clamp + forward trigger)
+      const REVERSE_TOLERANCE = 50; // px — a real reverse-scroll gesture, not sub-pixel jitter from
+                                     // continued active scrolling (confirmed live: a 0.5px threshold
+                                     // misfires on ordinary momentum noise while the user keeps
+                                     // scrolling forward, incorrectly resetting + re-triggering
+                                     // releaseTL mid-flight)
+      const SETTLE_MS       = 500; // ms of no further scroll input before committing the release —
+                                     // raised from 150: a real continuous scroll gesture (trackpad
+                                     // flicks with brief pauses between them) routinely has >150ms
+                                     // gaps between onUpdate ticks, which was committing (and forcing
+                                     // ScrollTrigger.refresh()) mid-gesture — the visible jitter this
+                                     // is meant to fix. `scrollend` (below) is the primary, precise
+                                     // "user has genuinely stopped" signal; this timer is now just the
+                                     // fallback for input methods that don't reliably fire it.
+      const OVERSIZED_END   = function () { return '+=' + (window.innerHeight * (CARD_STREAM_END_VH + LOCK_RESERVE_VH)); };
+      let step      = 0;     // 0 = warping in text + streaming cards, 1 = overlay autoplaying/held, 2 = release autoplaying/released
+      let lockY     = null;  // scroll position actively held while step 1/2 are mid-autoplay
+      let released  = false; // releaseTL has fully finished playing (commit not yet made)
+      let committed = false; // `end` has been shrunk to a fixed, settled target — pin naturally stays unpinned past it
+      let committedEnd = null; // the captured scroll position `end` was shrunk to — compared in px, not via self.progress (see committed branch)
+      let prevRaw   = null;  // previous tick's scroll position — used to tell forward from reverse motion
+
+      // Instant, unanimated reset — GSAP renders the t=0 state synchronously,
+      // nothing "reverse-plays." Fires either while still mid-hold/mid-settle
+      // (pin never left step 2's own range) or once GSAP's own bidirectional
+      // pin behavior naturally re-engages the pin after a committed release
+      // (scrolling back up past the shrunk `end` — see the onUpdate committed
+      // branch below). Either way #reviews itself, its card-stream, and its
+      // WARPIN text-reveal are untouched here — they're separate, plain scrub
+      // triggers (rfgTL/warpInTL) that already reverse correctly on their
+      // own; this only ever needs to clean up the autoplay/overlay/courses
+      // side of things.
+      function hardReverseReset() {
+        overlayTL.pause(0);
+        releaseTL.pause(0);
+        if (cornerFrame) gsap.set(cornerFrame, { opacity: 0 });
+        var courses = document.getElementById('courses');
+        if (courses) gsap.set(courses, { marginTop: 0, zIndex: 2, pointerEvents: 'none' });
+        step = 0;
+        lockY = null;
+        released = false;
+        reviewsRevealActive = false;
+        clearTimeout(_reviewsSettleTimer);
+        if (committed) {
+          // Restore the oversized `end` so the pin can genuinely lock again
+          // for a fresh forward pass, instead of sitting permanently capped
+          // at the tiny released-state target.
+          committed = false;
+          committedEnd = null;
+          if (_reviewsRevealST) { _reviewsRevealST.vars.end = OVERSIZED_END; ScrollTrigger.refresh(); }
+        }
+      }
+
+      function armSettleWatch() {
+        clearTimeout(_reviewsSettleTimer);
+        _reviewsSettleTimer = setTimeout(commitRelease, SETTLE_MS);
+      }
+
+      // Commits the release once scroll has genuinely gone idle — deferring
+      // this (rather than shrinking `end` synchronously the instant
+      // releaseTL completes, mid-momentum) is what keeps the fixed->relative
+      // transition from ever visibly jittering (confirmed live). Shrinks
+      // `end` to a FIXED target captured now (not re-read from `st.scroll()`
+      // at some later, unrelated refresh — that was the footer-overscroll
+      // bug: a later resize-triggered refresh would recompute against
+      // whatever scroll position existed at THAT moment instead of staying
+      // put) — deliberately NOT a full kill(): killing removes the entire
+      // pin-spacer in one shot regardless of how much of it the current
+      // scroll position has actually "used," which shifts everything below
+      // by the full spacer height and can snap window.scrollY to a wildly
+      // different position (confirmed live: scrollY jumped to 0). Shrinking
+      // `end` to just past the current settle point keeps the pin's own
+      // progress≈1 math already satisfied at the position the user is
+      // already at, so there's nothing to visually reconcile.
+      function commitRelease() {
+        if (step !== 2 || committed || _reviewsRevealST !== thisST) return;
+        var releasedAtScroll = _reviewsRevealST.scroll();
+        committed = true;
+        reviewsRevealActive = false; // release has genuinely settled — hand nav visibility back to the plain scroll handler
+        committedEnd = releasedAtScroll + 2;
+        _reviewsRevealST.vars.end = function () { return committedEnd; };
+        ScrollTrigger.refresh();
+        positionCoursesForRelease(); // final resync against the now-settled layout
+      }
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#reviews',
+          start: 'top top',
+          end: OVERSIZED_END,
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
+          invalidateOnRefresh: true,
+          onUpdate: function (self) {
+            var raw = self.scroll();
+            // Whether this tick is genuinely moving forward (or holding
+            // still), not backward — needed so step 0's own forward trigger
+            // below doesn't immediately refire the instant hardReverseReset()
+            // drops step back to 0 while the user is still mid-reverse-scroll
+            // (confirmed live: a static "are we past the distance threshold"
+            // check alone can't tell "just arrived here going forward" from
+            // "passed this point earlier and am now coming back through it").
+            var movingForward = prevRaw === null || raw >= prevRaw - SNAP_TOLERANCE;
+            prevRaw = raw;
+
+            if (committed) {
+              // Past the shrunk `end` — GSAP's own pin naturally stays
+              // unpinned here, no action needed. Comparing raw scroll
+              // against the captured committedEnd directly, with the same
+              // REVERSE_TOLERANCE margin used elsewhere, rather than
+              // `self.progress < 1` — progress is a start/end-derived ratio
+              // that can read fractionally under 1 from ordinary floating-
+              // point noise even during pure forward scrolling, which was
+              // spuriously firing hardReverseReset() (tearing #courses back
+              // down and re-inflating the pin's spacer) and made the page
+              // feel like it couldn't be scrolled past #courses at all.
+              if (raw < committedEnd - REVERSE_TOLERANCE) hardReverseReset();
+              return;
+            }
+
+            if (step === 0) {
+              var vh = (raw - self.start) / window.innerHeight;
+              // Extra safety check alongside the distance threshold: confirm
+              // #reviews' own WARPIN reveal (now scrubbed by this SAME pin,
+              // 0 -> WARPIN_VH) has actually finished before the overlay can
+              // trigger. Checking .reviews-btn specifically (not #reviews'
+              // own opacity, which is a discrete flag set to 1 at pin-start,
+              // well before the staggered child text tween finishes) — it's
+              // the last element in WARPIN's stagger order, so its opacity
+              // reaching 1 confirms every earlier-staggered sibling has too.
+              var reviewsReady = gsap.getProperty('#reviews .reviews-btn', 'opacity') >= 0.99;
+              if (vh >= CARD_STREAM_END_VH && reviewsReady && movingForward) {
+                step = 1;
+                reviewsRevealActive = true; // hides nav from here until commitRelease() settles it
+                // Lock exactly where the user currently is, not at the fixed
+                // threshold — guards the same edge case as before (scrub lag
+                // meaning reviewsReady settles a hair after the raw distance
+                // check), just cheap insurance now that both are driven by
+                // the same pin.
+                lockY = raw;
+                overlayTL.play(0);
+              }
+              return;
+            }
+
+            if (step === 1) {
+              if (overlayTL.progress() < 1) {
+                // Still autoplaying — hard-clamp regardless of how far a
+                // burst tried to move past this point.
+                if (Math.abs(raw - lockY) > SNAP_TOLERANCE) self.scroll(lockY);
+                return;
+              }
+              // Held, settled. Forward movement is "the other scroll" that
+              // triggers the release; backward movement reverses back to
+              // step 0 instead.
+              if (raw > lockY + SNAP_TOLERANCE) {
+                step = 2;
+                lockY = raw;
+                positionCoursesForRelease();
+                releaseTL.play(0);
+                releaseTL.eventCallback('onComplete', function () {
+                  released = true;
+                  armSettleWatch();
+                });
+              } else if (raw < lockY - REVERSE_TOLERANCE) {
+                hardReverseReset();
+              }
+              return;
+            }
+
+            if (step === 2) {
+              if (releaseTL.progress() < 1) {
+                if (Math.abs(raw - lockY) > SNAP_TOLERANCE) self.scroll(lockY);
+                return;
+              }
+              // Release finished playing. Track the furthest-forward point
+              // reached; a genuine reverse past it hands control back
+              // instantly. Otherwise keep #courses glued to the live scroll
+              // position and keep deferring the commit until scroll
+              // genuinely goes idle (scrollend, or SETTLE_MS of no further
+              // ticks) — see commitRelease().
+              if (raw > lockY) lockY = raw;
+              if (raw < lockY - REVERSE_TOLERANCE) {
+                hardReverseReset();
+                return;
+              }
+              positionCoursesForRelease();
+              armSettleWatch();
+            }
+          },
+        },
+      });
+      _reviewsRevealST = tl.scrollTrigger;
+      const thisST = _reviewsRevealST;
+      _reviewsScrollEndHandler = function () { if (released) commitRelease(); };
+      window.addEventListener('scrollend', _reviewsScrollEndHandler, { passive: true });
+      // Exposed so the footer-dock script (see footer parallax script) can
+      // force this commit the instant it detects the user has physically hit
+      // the bottom of the page — a stronger, unambiguous idle signal than
+      // this reveal's own SETTLE_MS timer, which can still be mid-countdown
+      // at that point on a fast, continuous scroll straight through to the
+      // footer. Same "only if released" gate as the scrollend handler above,
+      // so calling it early/redundantly is always a safe no-op.
+      window._reviewsForceCommit = _reviewsScrollEndHandler;
+
+      // #reviews' own text warp-in — previously scrubbed by
+      // initServicesReveal()'s tl while #services was still pinned
+      // underneath (that overlap is now removed, see the marginTop comment
+      // above). Re-anchored to the first WARPIN_VH viewports of #reviews'
+      // OWN pin instead — same content/values/eases as before, just
+      // reversible via plain scrub against this pin's own start. Card
+      // streaming and the overlay trigger threshold below both shift to
+      // start only after this range finishes (CARD_STREAM_END_VH).
+      const warpInEls = gsap.utils.toArray(['#reviews .reviews-title', '#reviews .reviews-headline', '#reviews .reviews-desc', '#reviews .reviews-btn']);
+      const floatGrid = document.querySelector('.reviews-float-grid');
+
+      const warpInTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#reviews',
+          start: 'top top',
+          end: () => '+=' + (window.innerHeight * WARPIN_VH),
+          scrub: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+      _reviewsWarpInST = warpInTL.scrollTrigger;
+
+      // #reviews itself fades in right at this pin's own start — a real,
+      // short tween (not a discrete .set()) specifically so it's reversible:
+      // a scrubbed timeline clamps at its own time-0 when scrolled above the
+      // trigger, so a .set() positioned AT time 0 stays permanently applied
+      // once scroll has ever reached it (confirmed live — #reviews' opacity
+      // stayed 1 even after scrolling all the way back to the page top).
+      // A genuine fromTo across a small slice participates in the scrub like
+      // everything else here, so it actually animates back to 0 on reverse
+      // instead of sticking on forever and bleeding through #services
+      // (transparent background) as it re-reveals on the way back up.
+      warpInTL.fromTo('#reviews', { opacity: 0 }, { opacity: 1, duration: WARPIN_VH * 0.08, ease: 'none' }, 0);
+      warpInTL.set('#reviews', { pointerEvents: 'auto' }, 0);
+      if (floatGrid) warpInTL.set(floatGrid, { opacity: 0 }, 0);
+      warpInTL.fromTo(warpInEls,
+        { opacity: 0, y: 20, scale: 0.9, filter: 'blur(10px)' },
+        { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', stagger: WARPIN_VH * 0.15, duration: WARPIN_VH * 0.55, ease: 'power2.out' },
+        0
+      );
+      // Float-grid becomes visible near the tail of WARPIN, matching its old
+      // same-instant flip timing — given a short fade instead of a hard cut
+      // since this is now a genuinely scrubbed (reversible) range.
+      if (floatGrid) {
+        warpInTL.fromTo(floatGrid, { opacity: 0 }, { opacity: 1, duration: WARPIN_VH * 0.3, ease: 'power1.out' }, WARPIN_VH * 0.7);
+      }
 
       // Card stream: each card rises from below viewport to above viewport
       // at a random x, driven by scroll with power2.inOut ease per card.
-      (function () {
-        const rfgCards = gsap.utils.toArray('.rfg-card');
-        if (!rfgCards.length) return;
-
+      // Separate, non-pinning scrubbed trigger, starts right after WARPIN
+      // finishes (WARPIN_VH -> WARPIN_VH+STREAM) — this is its own clearly
+      // scroll-tied beat, distinct from the autoplay steps below.
+      const rfgCards = gsap.utils.toArray('.rfg-card');
+      if (rfgCards.length) {
         const N        = rfgCards.length;   // 17
-        const CARD_DUR = 0.6;               // fraction of [0..PIN_MULT] per card → ~4 cards on screen at peak
-        const STAGGER_T = PIN_MULT - CARD_DUR; // = 2.4 — cards stream across virtually the whole pin, no dead tail
+        const CARD_DUR = 0.6;               // fraction of [0..STREAM] per card → ~4 cards on screen at peak
+        const STAGGER_T = STREAM - CARD_DUR; // = 2.4 — cards stream across virtually the whole range, no dead tail
 
-        function randomiseX() {
+        var randomiseX = function () {
           rfgCards.forEach(function (card) {
             var vw    = window.innerWidth;
             var cw    = card.offsetWidth || 160;
@@ -4090,100 +5374,58 @@ document.addEventListener("DOMContentLoaded", () => {
             var range = Math.max(0, vw - cw - pad * 2);
             card.style.left = (pad + Math.random() * range) + 'px';
           });
-        }
+        };
         randomiseX();
 
+        // Anchored to the SAME 'top top' start as #reviews' own pin (not
+        // shifted forward via a relative offset string) — confirmed live
+        // that shifting a scrub trigger's own `start` away from 'top top' on
+        // an element ALSO pinned by another trigger breaks entirely (cards
+        // never left their resting position, stuck at y:928 for the whole
+        // scroll range; the offset string also resolved backwards from what
+        // was intended, landing 720px BEFORE the pin's own start rather than
+        // after — "top top+=X" moves the reference point earlier, not
+        // later). Instead the trigger's own `end` is extended to cover the
+        // full WARPIN_VH+STREAM range (same 'top top' anchor as the pin),
+        // and each card's own position within the timeline is shifted by
+        // +WARPIN_VH so the cards simply don't start moving until scroll has
+        // already passed through the warp-in portion.
         var shuffled = gsap.utils.shuffle(rfgCards.slice());
         var rfgTL = gsap.timeline({
           scrollTrigger: {
             trigger: '#reviews',
             start: 'top top',
-            end: () => '+=' + (window.innerHeight * PIN_MULT),
+            end: () => '+=' + (window.innerHeight * (WARPIN_VH + STREAM)),
             scrub: 0.5,
             invalidateOnRefresh: true,
             onRefresh: randomiseX,
           }
         });
+        _reviewsRfgST = rfgTL.scrollTrigger;
 
         shuffled.forEach(function (card, i) {
-          var pos = (i / (N - 1)) * STAGGER_T;
+          var pos = WARPIN_VH + (i / (N - 1)) * STAGGER_T;
           rfgTL.fromTo(card,
             { y: function () { return window.innerHeight + 28; } },
             { y: function () { return -(card.offsetHeight + 28); }, ease: 'power2.inOut', duration: CARD_DUR },
             pos
           );
         });
-
-        // Black handoff: overlaps the tail of the card stream instead of
-        // waiting for it to finish, so the pin never hits a dead stretch of
-        // "nothing but a fade". Linear (not the old back-loaded power3.in) so
-        // the growth reads as proportional to scroll throughout instead of
-        // "nothing, then a sudden slab of black". Shares rfgTL's
-        // trigger/scrub rather than its own ScrollTrigger (a second one on
-        // the same pinned element mismeasures its offsets against the pin
-        // spacer). Still fully closed by PIN_MULT, so it keeps masking any
-        // straggling card on a fast scroll — the #coursesRevealMask tween
-        // below (scoped to #courses' own entrance) is what actually
-        // guarantees a seamless, fully-black hand-off at the pin's release
-        // point regardless of exactly how far this one got.
-        rfgTL.fromTo('#reviewsFadeOut',
-          { clipPath: 'inset(100% 0 0 0)' },
-          { clipPath: 'inset(0% 0 0 0)', ease: 'none', duration: PIN_MULT * 0.5 },
-          PIN_MULT * 0.5
-        );
-      })();
-    })();
-
-    // Courses: arrives already fully covered by --bg (seamless continuation
-    // of the reviews hand-off above — a GSAP pin's auto-spacer places
-    // #courses' top exactly at the viewport bottom the instant the reviews
-    // pin releases, so this ScrollTrigger's start lines up with that release
-    // essentially exactly), then reveals its own tinted background as it
-    // scrolls into place. Same "starts covered, fades in on arrival" pattern
-    // as the hero → services hand-off (initServicesReveal), so the darkening
-    // is tied directly and reversibly to real scroll instead of resolving
-    // early inside the reviews pin and then sitting static.
-    gsap.to('#coursesRevealMask', {
-      opacity: 0,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: '#courses',
-        start: 'top bottom',
-        end: 'top top',
-        scrub: true,
-        invalidateOnRefresh: true,
-      },
-    });
-
-    // Audio toggle — unmuting only holds while the visitor is still; the next
-    // scroll they make automatically mutes it back so sound never carries
-    // into the next section.
-    let _scrollRemuteHandler = null;
-    function _clearScrollRemute() {
-      if (_scrollRemuteHandler) {
-        window.removeEventListener('scroll', _scrollRemuteHandler, { passive: true });
-        _scrollRemuteHandler = null;
       }
     }
-    vrAudioBtn.addEventListener('click', () => {
-      vmVideo.muted = !vmVideo.muted;
-      vrAudioBtn.classList.toggle('muted', vmVideo.muted);
-      vrAudioLbl.textContent = vmVideo.muted ? 'Unmute' : 'Mute';
+    window.initReviewsReveal = initReviewsReveal;
+    initReviewsReveal();
 
-      _clearScrollRemute();
-      if (!vmVideo.muted) {
-        // Arm on the next frame so the scroll settling from this very click
-        // (e.g. from a tap that nudges the page) doesn't instantly re-mute it.
-        requestAnimationFrame(() => {
-          _scrollRemuteHandler = () => {
-            vmVideo.muted = true;
-            vrAudioBtn.classList.add('muted');
-            vrAudioLbl.textContent = 'Unmute';
-            _clearScrollRemute();
-          };
-          window.addEventListener('scroll', _scrollRemuteHandler, { passive: true });
-        });
-      }
+    // Audio toggle — turning sound on always resets to full volume, even if
+    // a prior scroll-driven fade (see heroTL's volume tween above) had left
+    // it turned down; scrolling away from here fades it back out gradually
+    // rather than an abrupt mute.
+    vrAudioBtn.addEventListener('click', () => {
+      const nowMuted = !vmVideo.muted;
+      vmVideo.muted = nowMuted;
+      if (!nowMuted) vmVideo.volume = 1;
+      vrAudioBtn.classList.toggle('muted', nowMuted);
+      vrAudioLbl.textContent = nowMuted ? 'Unmute' : 'Mute';
     });
   })();
 });
@@ -4196,9 +5438,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const footer    = document.querySelector('footer');
     const menuBtnEl = document.getElementById('menuBtn');
     const bookBtnEl = document.getElementById('bookBtn');
-    const menuAnc   = document.getElementById('footerMenuAnchor');
-    const bookAnc   = document.getElementById('footerBookAnchor');
-    if (!footer || !menuBtnEl || !bookBtnEl || !menuAnc || !bookAnc) return;
+    const footerMenuBtn = document.getElementById('footerMenuBtn');
+    const footerBookBtn = document.getElementById('footerBookBtn');
+    if (!footer || !menuBtnEl || !bookBtnEl) return;
+
+    // The static footer Menu button just clicks the real #menuBtn, reusing
+    // its own open/close logic (see the menu open/close script) rather than
+    // duplicating it.
+    if (footerMenuBtn) footerMenuBtn.addEventListener('click', () => menuBtnEl.click());
+
+    const footerDockBtns = [footerMenuBtn, footerBookBtn].filter(Boolean);
 
     // Set initial footer offset
     gsap.set(footer, { yPercent: 6 });
@@ -4206,97 +5455,153 @@ document.addEventListener("DOMContentLoaded", () => {
     // Deceleration curve for the footer's landing — fast start, gradual glide to a stop.
     const easeLand = gsap.parseEase('power3.out');
 
-    // Contact info fades in only after the nav buttons finish docking —
+    // Contact info fades in only after the footer buttons finish warping in —
     // hidden up front so there's no flash before the trigger fires.
     const contactCol = document.querySelector('.footer-contact-col');
     if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
     let contactRevealed = false;
 
-    // Capture button natural positions (x=0, y=0 in transform space)
-    function captureNatural() {
-      gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
-      return {
-        mx: menuBtnEl.getBoundingClientRect().left,
-        my: menuBtnEl.getBoundingClientRect().top,
-        bx: bookBtnEl.getBoundingClientRect().left,
-        by: bookBtnEl.getBoundingClientRect().top,
-      };
+    // Dims #socials (still visible/animating around the footer's edges,
+    // since the footer no longer fully masks it) once the footer is fully
+    // docked — see the `docked` state below.
+    const socialsDim = document.getElementById('socialsDim');
+
+    // Warp-in/out for the real, statically-positioned footer buttons — pure
+    // opacity/scale/y/blur, the same warp recipe used for the services/
+    // reviews/courses reveals elsewhere in this file. No position math at
+    // all: these buttons live exactly where the footer's own CSS lays them
+    // out and never move, so there's nothing left to jitter.
+    function warpInFooterButtons() {
+      if (!footerDockBtns.length) return;
+      gsap.to(footerDockBtns, {
+        opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+        duration: 0.6, stagger: 0.08, ease: 'power2.out', overwrite: 'auto',
+      });
+      gsap.set(footerDockBtns, { pointerEvents: 'auto' });
     }
-    let nat = captureNatural();
+    function warpOutFooterButtons() {
+      if (!footerDockBtns.length) return;
+      gsap.to(footerDockBtns, {
+        opacity: 0, y: 16, scale: 0.9, filter: 'blur(8px)',
+        duration: 0.35, ease: 'power2.in', overwrite: 'auto',
+      });
+      gsap.set(footerDockBtns, { pointerEvents: 'none' });
+    }
 
     let lastRaw = -1;
     let raf = 0;
     let prevFooterAnimActive = false;
-    let landed = false;
-    // True once the buttons have fully landed + revealed. While true, the
-    // whole footer+button system (parallax, opacity, position) holds fixed
-    // regardless of scroll — buttons only fly back once the footer genuinely
-    // leaves the viewport (footerAnimActive goes false), not just because the
-    // user scrolled up a little within the footer zone.
+    // True once the footer buttons have fully warped in. While true, the
+    // whole footer+button system (parallax, footer buttons) holds fixed
+    // regardless of scroll — the footer buttons only warp back out once the
+    // footer genuinely leaves the viewport (footerAnimActive goes false), or
+    // on mobile, the instant the user scrolls back up out of fully docked.
     let docked = false;
 
     function tick() {
       raf = 0;
       const vH = window.innerHeight;
       const scrollY = window.scrollY;
+      const mobile = window.matchMedia('(max-width: 767px)').matches;
+      const footerRect = footer.getBoundingClientRect();
+
       // Use maxScroll as the end reference — footer.offsetTop may exceed maxScroll due to pin spacers
       const maxScroll = document.body.scrollHeight - vH;
       const startScroll = footer.offsetTop - vH; // scroll pos when footer top enters viewport
-      const raw = Math.max(0, Math.min(1, (scrollY - startScroll) / (maxScroll - startScroll)));
+      // Mobile: treat "within a few px of maxScroll" as fully at the bottom.
+      // Momentum/rubber-band scrolling on mobile routinely settles 1-6px
+      // short of the browser's true max-scroll on sub-pixel/fractional-DPR
+      // positions — short of a genuine second gesture, but enough that the
+      // exact-equality raw===1 this formula otherwise needs never actually
+      // landed, leaving the footer visibly a hair short of docked. This is
+      // in addition to (not instead of) the ScrollTrigger 'refresh' listener
+      // below, which covers the separate case of maxScroll itself shifting
+      // after the user's last scroll input.
+      const atBottom = mobile && scrollY >= maxScroll - 6;
+      const raw = atBottom ? 1 : Math.max(0, Math.min(1, (scrollY - startScroll) / (maxScroll - startScroll)));
+
+      // maxScroll above (from document.body.scrollHeight) can still be
+      // inflated by #reviews' own oversized pin-spacer if its release hasn't
+      // committed yet (see initReviewsReveal()'s commitRelease()/SETTLE_MS),
+      // which otherwise leaves `raw` (and everything gated on raw>=1:
+      // docking, the footer buttons, the socials dim) a hair short of
+      // complete until some LATER event triggers a recompute — read as the
+      // footer "stopping right before the end, needing one more swipe."
+      // Forcing the commit closes that gap — but doing it right AT atBottom
+      // (the literal max-scroll edge) backfired: the forced
+      // ScrollTrigger.refresh() shrinks document.body.scrollHeight while the
+      // browser is still pinned at the OLD, taller max, so it has no choice
+      // but to rubber-band scrollY back down to fit — a visible bounce.
+      // Triggering it much earlier instead (raw>=0.4, well before the user
+      // is anywhere near the true bottom, not gated to the mobile-only
+      // atBottom shortcut) lets that layout shift happen and fully settle
+      // long before they arrive — by 100% there's nothing left to shrink out
+      // from under them. Safe to call repeatedly every tick past this point:
+      // commitRelease() itself is a no-op once already committed, and a
+      // no-op until `released` (which is already true by the time raw means
+      // anything here, since the footer sits well after the entire
+      // courses/reviews sequence).
+      if (raw >= 0.4 && typeof window._reviewsForceCommit === 'function') window._reviewsForceCommit();
+
+      // Mobile-only: bail out of the docked end-state the instant the user
+      // scrolls back up, instead of waiting for the footer to fully leave the
+      // viewport (leavingZone below). 0.98 (not 1) gives a small dead zone
+      // against sub-pixel scroll-bounce jitter right at the resting point.
+      if (mobile && docked && raw < 0.98) {
+        docked = false;
+        warpOutFooterButtons();
+        contactRevealed = false;
+        if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
+      }
 
       if (Math.abs(raw - lastRaw) < 0.00005) return;
       lastRaw = raw;
 
-      // Unfreeze the position-lock on scroll-up — but not while docked,
-      // since docked means "hold everything" regardless of raw moving down.
-      if (raw < 1 && !docked) landed = false;
+      // Dims #socials continuously as the footer nears fully filling the
+      // viewport, tied directly to the same live `raw` fill-progress value
+      // used everywhere else in this tick — not a discrete docked/leavingZone
+      // on/off pair, which would fire late (only once fully docked, i.e.
+      // raw>=1) and release even later (only once the footer had COMPLETELY
+      // left the viewport). Driving it straight off `raw` each tick makes it
+      // automatically, exactly symmetric on scroll-up.
+      if (socialsDim) {
+        const DIM_START = 0.85; // footer reads as "almost filling the viewport" from here
+        const dimProgress = Math.max(0, Math.min(1, (raw - DIM_START) / (1 - DIM_START)));
+        gsap.set(socialsDim, { opacity: dimProgress });
+      }
 
-      footerAnimActive = raw > 0.02;
+      // Exact pixel boundary rather than a scroll-distance epsilon: "active"
+      // means any part of the footer is on screen, so the complementary
+      // state (footerRect.top >= vH) is a clean "0px of footer visible" —
+      // the trigger the nav reappear-at-top waits for (see leavingZone).
+      footerAnimActive = footerRect.top < vH;
 
       const enteringZone = footerAnimActive && !prevFooterAnimActive;
       const leavingZone  = !footerAnimActive && prevFooterAnimActive;
 
-      // The buttons fly from their nav position to the footer anchors across
-      // this whole scroll range, passing directly over #socials (which stays
-      // sticky-visible mid-viewport the entire time). Keep them hidden and
-      // non-interactive while in transit — visible + clickable only once
-      // they're locked into their final footer position — instead of forcing
-      // them fully visible/clickable the instant the flight starts.
+      // The floating nav FABs (#menuBtn/#bookBtn) simply hide the instant the
+      // footer zone is entered — they no longer fly anywhere. They reappear
+      // on their own via the plain nav scroll handler (see nav scroll
+      // script, gated on footerAnimActive) once the footer has fully left
+      // the viewport again on scroll-up — nothing further needed here.
       if (enteringZone) {
         docked = false;
-        navShown = false;
-        gsap.killTweensOf([menuBtnEl, bookBtnEl]);
-        gsap.set([menuBtnEl, bookBtnEl], { autoAlpha: 0, pointerEvents: 'none' });
+        setNavVisibility(false);
       }
 
       if (leavingZone) {
-        // Footer has genuinely scrolled out of view — hand control back to
-        // the plain nav scroll handler. Fade out first, and only once fully
-        // invisible snap x/y back to the natural nav position, so there's
-        // never a visible jump.
+        // Footer has genuinely scrolled out of view — hand nav visibility
+        // back to the plain scroll handler, and warp the footer buttons out.
         docked = false;
-        landed = false;
-        navShown = false;
-        gsap.killTweensOf([menuBtnEl, bookBtnEl]);
-        gsap.set([menuBtnEl, bookBtnEl], { pointerEvents: 'none' });
-        gsap.to([menuBtnEl, bookBtnEl], {
-          autoAlpha: 0,
-          duration: 0.25,
-          ease: 'power2.inOut',
-          onComplete: function () {
-            gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
-          },
-        });
+        warpOutFooterButtons();
         contactRevealed = false;
         if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
       }
 
       prevFooterAnimActive = footerAnimActive;
 
-      // Docked hold: footer is fully flush and buttons are fully visible +
-      // pinned at their anchors — freeze the footer's own parallax too, so
-      // buttons never detach from their anchors while the user scrolls
-      // around inside the footer zone.
+      // Docked hold: footer is fully flush and its own buttons are fully
+      // warped in — freeze the footer's own parallax too.
       if (docked) return;
 
       const e = easeLand(raw);
@@ -4304,46 +5609,14 @@ document.addEventListener("DOMContentLoaded", () => {
       // Footer parallax: decelerates into its landed position
       gsap.set(footer, { yPercent: 6 * (1 - e) });
 
-      // Fade the buttons back in only in the final stretch of the flight, so
-      // they appear right as they settle into the footer anchors rather than
-      // being visible for the whole trip across #socials.
-      if (footerAnimActive) {
-        const REVEAL_START = 0.9;
-        const reveal = raw <= REVEAL_START ? 0 : (raw - REVEAL_START) / (1 - REVEAL_START);
-        navShown = reveal > 0;
-        gsap.set([menuBtnEl, bookBtnEl], {
-          autoAlpha: reveal,
-          pointerEvents: raw >= 1 ? 'auto' : 'none',
-        });
-        if (raw >= 1) {
-          docked = true;
-          if (!contactRevealed && contactCol) {
-            contactRevealed = true;
-            gsap.to(contactCol, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.15 });
-          }
+      if (raw >= 1) {
+        docked = true;
+        warpInFooterButtons();
+        if (!contactRevealed && contactCol) {
+          contactRevealed = true;
+          gsap.to(contactCol, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.15 });
         }
       }
-
-      // Once landed at endpoint, hold position — don't re-read live DOM positions
-      if (landed) return;
-
-      // Read anchor positions AFTER footer has been moved
-      const mA = menuAnc.getBoundingClientRect();
-      const bA = bookAnc.getBoundingClientRect();
-
-      const safe = 20;
-      const menuH = menuBtnEl.offsetHeight || 22;
-      const bookH = bookBtnEl.offsetHeight || 38;
-      const menuTargetY = Math.min(mA.top, vH - menuH - safe);
-      const bookTargetY = Math.min(bA.top, vH - bookH - safe);
-
-      const bookTargetX = bA.right - bookBtnEl.offsetWidth;
-
-      gsap.set(menuBtnEl, { x: (mA.left - nat.mx) * e, y: (menuTargetY - nat.my) * e });
-      gsap.set(bookBtnEl, { x: (bookTargetX - nat.bx) * e, y: (bookTargetY - nat.by) * e });
-
-      // Freeze once fully landed
-      if (raw >= 1) landed = true;
     }
 
     function onScroll() {
@@ -4355,12 +5628,31 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener('scrollend', function () { lastRaw = -1; tick(); }, { passive: true });
 
     window.addEventListener('resize', function () {
-      nat = captureNatural();
       lastRaw = -1;
-      landed = false;
       docked = false;
       tick();
     });
+
+    // The #reviews pin (see its own script) shrinks its oversized placeholder
+    // spacer ~150ms after scroll goes idle (commitRelease/SETTLE_MS), calling
+    // ScrollTrigger.refresh() in the background — with no scroll event of its
+    // own. That shrink moves footer.offsetTop (and document.body.scrollHeight)
+    // out from under this script's last-computed raw, so a swipe that already
+    // visually landed the footer can sit just short of raw===1 until the
+    // user's *next* scroll input happens to trigger a recompute — read by the
+    // user as "stops right before the end, needs one more swipe." Recompute
+    // directly off ScrollTrigger's own refresh event instead of waiting for
+    // that next scroll, so the dock completes on its own once the layout
+    // actually settles. Forcing a full resync is harmless when nothing was
+    // actually stale — warpInFooterButtons()/setNavVisibility() are driven
+    // by plain GSAP tweens that no-op sensibly if already in the target state.
+    if (typeof ScrollTrigger !== 'undefined') {
+      ScrollTrigger.addEventListener('refresh', function () {
+        lastRaw = -1;
+        docked = false;
+        tick();
+      });
+    }
 
     // Run once after layout settles (all pin spacers added)
     requestAnimationFrame(function () { requestAnimationFrame(tick); });
@@ -4377,15 +5669,29 @@ document.addEventListener("DOMContentLoaded", () => {
 <script>
 // ── Footer title slide-in animation ──────────────────────────
 (function() {
-  const unique = document.getElementById('footerWordUnique');
-  const touch  = document.getElementById('footerWordTouch');
+  const unique    = document.getElementById('footerWordUnique');
+  const touch     = document.getElementById('footerWordTouch');
+  const beautyTag = document.querySelector('.footer-beauty-tag');
+  const location  = document.querySelector('.footer-location');
   if (!unique || !touch) return;
+
+  // Beauty Salon tag + Curaçao line stay hidden until the UNIQUE/TOUCH
+  // slide-in finishes (0.9s, +0.08s delay on TOUCH — see .revealed rules).
+  const subEls = [beautyTag, location].filter(Boolean);
+  if (subEls.length && typeof gsap !== 'undefined') gsap.set(subEls, { opacity: 0, y: 16 });
+
+  const HEADER_REVEAL_MS = 980;
 
   const observer = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
         unique.classList.add('revealed');
         touch.classList.add('revealed');
+        if (subEls.length && typeof gsap !== 'undefined') {
+          setTimeout(function() {
+            gsap.to(subEls, { opacity: 1, y: 0, duration: 0.8, ease: 'spring', stagger: 0.08 });
+          }, HEADER_REVEAL_MS);
+        }
         observer.disconnect();
       }
     });
@@ -4404,9 +5710,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const groups = [
     // #services is handled by initServicesReveal() (pinned + scrubbed assemble)
-    ["#courses",  [".courses-title", ".courses-tagline", ".courses-desc", ".courses-desc-2"]],
+    // #courses is handled by initReviewsReveal()'s master timeline (pinned +
+    // scrubbed assemble, same pattern) — see the coursesTitle/coursesTextBtns
+    // labels there.
     ["#socials",  [".socials-title", ".socials-desc"]],
-    ["footer",    [".footer-location"]],
   ];
 
   function collectEls(sectionSel, selectors) {
@@ -4448,7 +5755,13 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <script>
-/* svc-reviews-tease — one-shot fade-in, then fade-out-left at 50 % viewport */
+/* svc-reviews-tease — entrance now fires once, externally, the instant
+   #services finishes settling to full opacity (see initServicesReveal()'s
+   pin ScrollTrigger onUpdate, gated on real scroll progress past its
+   warpInElsSvc tween's finish point) instead of approximating from scroll
+   position by hand. Fire-once, not scroll-reversible. Exit (fade + drift
+   left once scrolled past) is unchanged — still plain-scroll-driven, since
+   that only matters after the pin has released and normal scroll resumes. */
 (function () {
   var el = document.querySelector('.svc-reviews-tease');
   if (!el || typeof gsap === 'undefined') return;
@@ -4458,26 +5771,28 @@ document.addEventListener("DOMContentLoaded", () => {
   var shown  = false;
   var hidden = false;
 
-  function check() {
+  window.playServicesCTA = function () {
+    if (shown) return;
+    shown = true;
+    gsap.fromTo(el,
+      { opacity: 0, scale: 0.93 },
+      { opacity: 1, scale: 1, duration: 0.9, ease: 'power2.out' }
+    );
+    window.addEventListener('scroll', checkHide, { passive: true });
+  };
+
+  function checkHide() {
     if (hidden) return;
     var rect = el.getBoundingClientRect();
     var vh   = window.innerHeight;
 
-    /* Fade in once the element enters the viewport from below */
-    if (!shown && rect.top < vh && rect.bottom > 0) {
-      shown = true;
-      gsap.to(el, { opacity: 1, duration: 1.2, ease: 'power2.out' });
-    }
-
     /* Fade out (slow, leftward drift) once the element reaches 50 % from the top */
-    if (shown && rect.top <= vh * 0.5) {
+    if (rect.top <= vh * 0.5) {
       hidden = true;
-      window.removeEventListener('scroll', check);
+      window.removeEventListener('scroll', checkHide);
       gsap.to(el, { opacity: 0, x: -20, duration: 0.45, ease: 'power3.out' });
     }
   }
-
-  window.addEventListener('scroll', check, { passive: true });
 })();
 </script>
 
@@ -4493,55 +5808,199 @@ function initServicesReveal() {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
   if (_svcRevealST) { _svcRevealST.kill(); _svcRevealST = null; }
 
+  const vmFadeOut = document.getElementById('vmFadeOut');
+  const HOLD     = window.SVC_HOLD_VH;
+  const BLACKOUT = window.SVC_BLACKOUT_VH;
+  const WARPOUT  = window.SVC_WARPOUT_VH;
+  const WARPIN   = window.SVC_WARPIN_VH;
+
   // Reduced motion: skip the pin entirely, leave everything readable and in
   // normal flow (undo any overlap props a prior motion run may have set).
+  // #reviews' own hidden-at-rest CSS is scoped to `no-preference`, so it's
+  // already fully visible/normal-flow for these users without touching it —
+  // just undo its marginTop pull-up.
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     gsap.set('#services', { marginTop: 0, zIndex: 1, backgroundColor: 'var(--bg)', pointerEvents: 'auto' });
+    // initReviewsReveal() manages #reviews' own marginTop internally (it has
+    // to — see the comment above its definition), including the
+    // reduced-motion case, so just trigger a recreation here.
+    if (typeof window.initReviewsReveal === 'function') window.initReviewsReveal();
     return;
   }
 
-  // Overlap the hero's scroll-out: pull #services up one viewport so it reaches
-  // the top exactly as the hero pin releases, paint it above the hero, already
-  // opaque — a solid cover, no read-through of the still-animating hero layer.
+  // Overlap the hero's (now-extended) scroll-out: pull #services up so it
+  // still reaches the top exactly HERO_ORIG_VH viewports in (unchanged from
+  // before), even though hero's own pin-spacer is now much taller — it has
+  // to cover #services' own pin's new full duration (SVC_PIN_VH_MULT
+  // viewports: the original static hold, plus blackout, warp-out, and
+  // warp-in), not just the original 1-viewport hold. #services then stays
+  // pinned there for that whole duration, exactly overlapping hero's new
+  // trailing hold, so the still-visible (scrim-dimmed) video and #services
+  // are on screen together throughout, releasing into #reviews at the end.
+  // #services stays background:transparent throughout (its CSS default) — the
+  // darkening lives entirely on the video layer (see the hero IIFE's
+  // vmFadeOut tween/hold), not on #services itself.
   // pointerEvents:none until pinned so it doesn't swallow clicks meant for
   // the hero (e.g. the mute button) underneath; restored when the pin engages.
-  gsap.set('#services', { marginTop: -window.innerHeight, zIndex: 11, backgroundColor: '#0A0906', pointerEvents: 'none' });
+  gsap.set('#services', { marginTop: -window.innerHeight * (1 + window.SVC_PIN_VH_MULT), zIndex: 12, pointerEvents: 'none' });
 
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: '#services',
       start: 'top top',
-      end: () => '+=' + window.innerHeight,   // one viewport of scrub distance
+      end: () => '+=' + (window.innerHeight * window.SVC_PIN_VH_MULT),
       scrub: 1,                               // premium lag on the pin/pointer handoff
       pin: true,
       pinSpacing: true,
       anticipatePin: ScrollTrigger.isTouch === 1 ? 0 : 1,
       invalidateOnRefresh: true,
       // Interactive only while pinned; non-interactive while it's the
-      // opaque overlay above the hero (so the hero stays clickable underneath).
-      onEnter:     () => gsap.set('#services', { pointerEvents: 'auto' }),
+      // overlay above the hero (so the hero/video stays clickable underneath).
+      // The CTA text's one-time entrance is NOT fired here — this is the pin
+      // engaging (the very start of HOLD), before the header/showcase/carousel
+      // have even warped in. It fires later, once that warp-in actually
+      // completes — see onUpdate below.
+      onEnter: () => {
+        gsap.set('#services', { pointerEvents: 'auto' });
+      },
       onEnterBack: () => gsap.set('#services', { pointerEvents: 'auto' }),
       onLeaveBack: () => gsap.set('#services', { pointerEvents: 'none' }),
+      // Fires the CTA text's one-time entrance once real scroll progress has
+      // carried this pin past the HOLD warp-in (header/showcase-row/carousel
+      // fully settled). Deliberately an onUpdate on the ScrollTrigger itself,
+      // NOT a tl.call()/onComplete embedded in the timeline below — GSAP
+      // forces this timeline through its full range internally (measuring
+      // the pin-spacer, invalidateOnRefresh, etc.), and embedded callbacks
+      // fire during those synthetic passes too. onUpdate's `self.progress`
+      // only reflects genuine scroll position, so it stays inert until the
+      // reader actually scrolls there (confirmed live: a tl.call() version
+      // fired the CTA within the first second of page load, before any
+      // scrolling, because of exactly this).
+      onUpdate: (self) => {
+        if (self.progress >= HOLD / window.SVC_PIN_VH_MULT && typeof window.playServicesCTA === 'function') {
+          window.playServicesCTA();
+        }
+      },
+      // No onLeave here anymore — #services just holds at its scrim value
+      // through HOLD (set by the hero timeline), then this tl itself drives
+      // the whole blackout->warp-out->warp-in sequence below, unpinning
+      // straight into #reviews' own (already-engaged, see below) pin.
+      // Hiding the mute button / resolving final state happens on HERO's own
+      // onLeave instead, which releases at this exact same scroll position
+      // by construction (see the hero IIFE's HERO_TOTAL_VH comment).
     },
   });
   _svcRevealST = tl.scrollTrigger;
 
-  // This pin is created later in the page than the reviews/courses triggers
-  // below it. Sort the refresh order by document position so their start
-  // positions include this pin's spacer (otherwise they fire 1 viewport early).
+  // #reviews gets the SAME pull-up treatment, one layer deeper, so its text
+  // content can warp into view on top of #services while #services is still
+  // technically pinned underneath — mirroring the hero->services pattern.
+  // It's frozen in position exactly WARPIN viewports before the shared
+  // release point (not sliding during warp-in — the reveal is the warp
+  // animation itself, not a scroll-driven slide). initReviewsReveal()
+  // manages #reviews' own marginTop internally (see the comment above its
+  // definition for why) — this must still run AFTER #services' own pin
+  // (just above) exists, since #reviews' natural document position is
+  // measured relative to #services' pin-spacer; creating #reviews' pin any
+  // earlier measures against a stale/prior spacer state (confirmed live:
+  // this was a real bug when the call briefly lived before the block above
+  // — #reviews' pin engaged several viewports too early).
+  if (typeof window.initReviewsReveal === 'function') window.initReviewsReveal();
+
+  // 0. #services' own content warps UP into view, bottom-up, filling what
+  // used to be a static do-nothing HOLD — same warp recipe (opacity+y+scale+
+  // blur) as #reviews' own warp-in below, just reversed in direction and
+  // starting from beneath rather than settling from above. Hidden-at-rest
+  // CSS lives with .svc-section-header/.showcase-row/.carousel-shell.
+  // .svc-reviews-tease is excluded — it already has its own one-shot
+  // entrance (playServicesCTA(), fired by the pin's onUpdate above once real
+  // scroll progress passes this tween's finish point — see that comment for
+  // why it's an onUpdate and not a call() embedded here). Durations are
+  // fractions of HOLD (this tl's own "time" units, see the comment on the
+  // blackout tween below) so the three elements finish exactly as HOLD ends,
+  // handing off cleanly into the blackout tween that starts right after.
+  const warpInElsSvc = gsap.utils.toArray(['.svc-section-header', '.showcase-row', '.carousel-shell']);
+  tl.fromTo(warpInElsSvc,
+    { opacity: 0, y: 72, scale: 0.9, filter: 'blur(16px)' },
+    { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', stagger: HOLD * 0.2, duration: HOLD * 0.6, ease: 'power2.out' },
+    0
+  );
+
+  // a. Blackout — video darkens from its scrim value to fully opaque, eased
+  // out. Positioned right after HOLD (now the warp-in above, not a static
+  // hold), using plain viewport-unit values as this tl's own "time" units —
+  // its ScrollTrigger's scroll distance is SVC_PIN_VH_MULT viewports, and
+  // HOLD+BLACKOUT+WARPOUT+WARPIN sums to exactly that, so this tl's own total
+  // duration self-anchors to the correct value with no K-rescaling or extra
+  // hold tween needed (unlike heroTL, whose internal animation is shorter
+  // than its pin's own duration).
+  tl.to(vmFadeOut, { opacity: 1, ease: 'power2.out', duration: BLACKOUT }, HOLD);
+
+  // b. #services' own content warps out once black — bottom-most element
+  // first (the scroll-to-reviews tease), sweeping up to the header last.
+  // Scale-down + blur-up + fade + slight rise reads as "dissolving into the
+  // black" — the site's established vertical-only motion language, plus the
+  // scale ingredient for the "warp" quality.
+  const warpOutEls = gsap.utils.toArray(['.svc-reviews-tease', '.carousel-shell', '.showcase-row', '.svc-section-header']);
+  tl.to(warpOutEls, {
+    opacity: 0, y: -32, scale: 0.88, filter: 'blur(16px)',
+    stagger: WARPOUT * 0.1333, duration: WARPOUT * 0.6, ease: 'power2.in',
+  }, HOLD + BLACKOUT);
+
+  // #reviews itself (opacity/pointerEvents) and its text warp-in used to live
+  // on THIS tl, overlapping the tail of #services' own pin so #reviews' text
+  // could warp in on top of a still-pinned #services. That overlap is
+  // removed: #services now fully finishes and unpins before #reviews becomes
+  // sticky at all — see initReviewsReveal(), which now owns #reviews' own
+  // opacity/pointerEvents and its (re-homed, still-scrubbed) text warp-in.
+  // #services sits at a HIGHER z-index than #reviews (12 vs 11 — see #reviews'
+  // own z-index comment), so once its content has fully warped away it must
+  // stop hit-testing too, or its now-invisible carousel-shell (cursor:grab in
+  // CSS) keeps intercepting hover/clicks meant for #reviews underneath forever
+  // — onEnter/onEnterBack/onLeaveBack above only cover the pin engaging or
+  // reversing back out the top; nothing previously turned this off going
+  // forward past the pin's own end.
+  tl.set('#services', { pointerEvents: 'none' }, HOLD + BLACKOUT + WARPOUT);
+  // The carousel's own center card carries an inline pointerEvents:'auto'
+  // (svcApplyStyle, so only the active card is draggable/clickable while the
+  // carousel is live) which — being set directly on the element — outranks
+  // the ancestor #services rule just above. Without this it's the one still
+  // stuck live, inheriting .carousel-shell's cursor:grab right through to
+  // #reviews' content on top of it.
+  tl.set('#carouselShell .svc-card', { pointerEvents: 'none' }, HOLD + BLACKOUT + WARPOUT);
+
+  // This pin is created later in the page than #reviews' own pin below it.
+  // Sort the refresh order by document position so #reviews' start position
+  // includes this pin's spacer (otherwise it fires 1 viewport early), then
+  // refresh once now that the whole chain genuinely exists, for a correct
+  // re-read of every function-valued start/end in it.
   ScrollTrigger.sort();
+  ScrollTrigger.refresh();
 
 }
 
-// The -1-viewport overlap above is a one-time gsap.set, but on phones the
+// #services' overlap pull-up above is a one-time gsap.set, but on phones the
 // visual viewport height changes (URL bar). Re-sync it at the start of every
-// ScrollTrigger measurement pass so the services hand-off never drifts from
-// the hero pin's release point (stale offsets made both sections visible at
-// once during the transition).
+// ScrollTrigger measurement pass so the hand-off never drifts from the hero
+// pin's release point (stale offsets made multiple sections visible at once
+// during the transition). #reviews doesn't need (and must not get) the same
+// treatment here — its marginTop is only ever safe to set immediately before
+// its own pin is recreated (see initReviewsReveal()'s comment), which this
+// plain refreshInit-triggered gsap.set() does not do; it's already
+// recreated correctly wherever initServicesReveal() itself runs.
 if (typeof ScrollTrigger !== 'undefined') {
   ScrollTrigger.addEventListener('refreshInit', function () {
-    if (_svcRevealST && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set('#services', { marginTop: -window.innerHeight });
+    // Guarded the same way reviveServicesReveal() guards its own correction
+    // below — past the hero/services handoff point, unconditionally
+    // re-applying this pull-up against whatever innerHeight happens to be
+    // right now (e.g. a mobile URL-bar collapsing mid-scroll, which tends to
+    // fire exactly during an upward scroll gesture) shifts all downstream
+    // document flow and flashes/jumps content that's already settled deep in
+    // the page. Confirmed live: this was the cause of the hero/video scrim
+    // flashing back into view when scrolling back up from #courses on mobile.
+    const heroEnd = window.innerHeight * (window.HERO_PIN_VH_MULT || 5.5);
+    if (_svcRevealST && window.scrollY < heroEnd - 100 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set('#services', { marginTop: -window.innerHeight * (1 + window.SVC_PIN_VH_MULT) });
     }
   });
 }
@@ -4558,14 +6017,30 @@ if (typeof ScrollTrigger !== 'undefined') {
 // reversed direction. Past that point a plain refresh() is enough to correct
 // any measurement drift without touching the already-correct pinned state.
 function reviveServicesReveal() {
-  const heroEnd = window.innerHeight * 4.5;
-  if (window.scrollY < heroEnd - 100) initServicesReveal();
+  const heroEnd = window.innerHeight * (window.HERO_PIN_VH_MULT || 5.5);
+  if (window.scrollY < heroEnd - 100) {
+    // Re-measure the carousel's height-aware sizing too (not just the pin),
+    // guarded by the same safety window — this is what fonts.ready needs:
+    // svcComputeLayout() measures .svc-section-header's live rendered
+    // height to decide how much room the carousel gets, and if it first ran
+    // before the Cinzel webfont swapped in, the header's height (and hence
+    // the carousel's computed size) is based on stale fallback-font metrics,
+    // silently unbalancing the section's vertical centering until this
+    // re-runs against the final, post-font-load layout.
+    if (typeof svcComputeLayout === 'function') { svcComputeLayout(); svcInit(); }
+    initServicesReveal();
+  }
   ScrollTrigger.refresh();
 }
 
 // Build it now (cards + gsap already exist synchronously), and rebuild after
 // load — the load handler above may re-run svcInit() and replace the card DOM.
-initServicesReveal();
+// rAF-deferred (rather than run synchronously at parse time, before layout has
+// settled) to close the window where this could measure against an
+// incomplete layout and mis-pin #services immediately in the wrong place —
+// previously only corrected after the fact by the preloader-exit re-init
+// calls below, which was the visible "sticks, then releases" symptom.
+requestAnimationFrame(() => initServicesReveal());
 window.addEventListener('load', function () {
   requestAnimationFrame(reviveServicesReveal);
 });

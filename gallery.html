@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="format-detection" content="telephone=no">
-  <title>Gallery — Unique Touch Beauty Salon</title>
+  <title>Unique Touch Beauty Salon — See The Work</title>
   <link rel="icon" type="image/png" href="brand_assets/favicon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -192,11 +192,16 @@
       align-items: center; gap: 16px; margin-top: 16px;
     }
     .menu-social-link {
-      color: var(--white); text-decoration: none;
-      display: flex; align-items: center;
-      transition: color 0.25s ease;
+      width: 2.125rem; height: 2.125rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.55);
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
-    .menu-social-link:hover { color: var(--gold); }
+    .menu-social-link:hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); border-color: var(--gold); }
 
     /* ── BTN-GOLD (primary) ─────────────────── */
     .btn-gold {
@@ -786,7 +791,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-top: 18px;
+      margin-top: 6px;
     }
     .footer-location {
       font-size: 0.8125rem;
@@ -810,6 +815,7 @@
     .footer-spacer { flex: 1; }
     /* ── Nav pinned to bottom ── */
     .footer-bottom {
+      position: relative;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -825,7 +831,16 @@
       display: flex;
       justify-content: flex-end;
     }
-    .footer-contact-col { text-align: right; }
+    /* Bottom-center, independent of the menu anchor's flex position — see
+       the mobile query which resets this back to static/centered within
+       its own column-reverse stack. */
+    .footer-contact-col {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      text-align: center;
+    }
     .footer-col-label {
       font-size: 14px;
       font-weight: 400;
@@ -933,22 +948,58 @@
          justify-content:space-between distributes leftover space without
          risking overflow (unlike margin:auto on a now-fixed-height box). */
       .footer-inner { text-align: center; align-items: center; justify-content: space-between; }
-      .footer-head { flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
+      /* Whole header — eyebrow + UNIQUE/TOUCH stacked, hero mobile's own
+         treatment — pulled out of .footer-inner's flex flow to sit over the
+         footer-mobile.mp4 video's open-ocean half (right side; the founder
+         occupies the left half — see the video source at ~L1140). Taken out
+         via position:absolute rather than display:none on the flow itself,
+         so .footer-inner's justify-content:space-between still pins
+         .footer-bottom (menu + contact) to the bottom exactly as before —
+         no changes needed there. */
+      .footer-head {
+        position: absolute;
+        left: 50%;
+        right: var(--gutter);
+        top: 14%;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.2rem;
+      }
       /* display:contents flattens this group so Beauty Salon / TOUCH become
          direct flex children of .footer-head, reorderable like the hero. */
       .footer-title-right-group { display: contents; }
-      .footer-beauty-tag { order: 1; margin-bottom: 8px; font-size: 1.15rem; }
+      .footer-beauty-tag { order: 1; margin: 0 0 6px; font-size: 1.05rem; }
       .footer-title-left { order: 2; }
       .footer-title-right-group .footer-title-word { order: 3; }
-      /* Eyebrow + both headers hidden on mobile — .footer-head stays in the
-         flex flow (not display:none itself) so its margin-top:auto above
-         still absorbs leftover space the same way it did with them visible. */
-      .footer-title-word, .footer-beauty-tag { display: none; }
+      /* Same gradient-clip treatment as .hero-title-word, scaled down to fit
+         this right-half column instead of the hero's full-width mobile
+         stack (which runs up to 148px). */
+      .footer-title-word {
+        display: block;
+        font-size: clamp(2rem, 11vw, 2.75rem);
+        line-height: 0.95;
+        background: linear-gradient(180deg, #ffffff 0%, #ffffff 69%, #000000 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
       /* Curaçao tagline removed on mobile — keeps the header block clean. */
       .footer-location { display: none; }
+      /* Book button groups directly beneath the header stack, same
+         right-half column — the dock script (see footer parallax script)
+         reads this anchor's live position each frame, so it just flies the
+         real Book button here without any JS changes. */
+      .footer-top-right {
+        position: absolute;
+        left: 50%;
+        right: var(--gutter);
+        top: 42%;
+        text-align: center;
+        margin-left: 0;
+      }
       .footer-head-sub { flex-direction: column; align-items: center; text-align: center; gap: 1rem; margin-top: 1.5rem; }
       .footer-spacer { display: none; }
-      .footer-top-right { text-align: center; margin-left: 0; }
       /* Dock centering: the scroll-dock lands the Book button at its anchor's
          (right edge − button width). Matching the anchor width to the button
          width (154px pill here, 40px FAB at ≤480) centers it. */
@@ -959,7 +1010,7 @@
       /* Menu docks at its anchor's left edge; anchor width = menu button width
          (54px) so the centered anchor centers the button. */
       #footerMenuAnchor { align-self: center; width: 54px; margin: 0 auto; }
-      .footer-contact-col { text-align: center; }
+      .footer-contact-col { position: static; transform: none; text-align: center; }
       /* Shrink contact so it doesn't compete with the header. */
       .footer-col-label { font-size: 11px; margin-bottom: 8px; }
       .footer-contact { gap: 4px; }
@@ -1062,13 +1113,13 @@
     <div class="menu-divider"></div>
 
     <div class="menu-socials">
-      <a href="https://www.facebook.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook">
+      <a href="https://www.facebook.com/Uniquetouch.beautysalonn" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
       </a>
-      <a href="https://www.instagram.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram">
+      <a href="https://www.instagram.com/uniquetouch.beautysalon/" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
       </a>
-      <a href="https://www.tiktok.com/@uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok">
+      <a href="https://www.tiktok.com/@uniquetouch.beautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z"/></svg>
       </a>
     </div>
@@ -1121,7 +1172,8 @@
 <!-- ═══════════════ FOOTER ═══════════════ -->
 <footer>
   <div class="footer-bg">
-    <video class="footer-bg-video" autoplay muted loop playsinline>
+    <video class="footer-bg-video" autoplay muted loop playsinline preload="metadata" poster="brand_assets/footbg-poster.jpg">
+      <source src="brand_assets/footer-mobile.mp4" media="(max-width: 767px)" type="video/mp4">
       <source src="brand_assets/footbg.mp4" type="video/mp4">
     </video>
     <div class="footer-bg-tint"></div>
@@ -1213,19 +1265,61 @@ let menuOpenScrollY = null;
 let footerAnimActive = false;
 
 let navShown = true; // buttons start visible
-function setNavVisibility(visible) {
+const NAV_BIRTH_DURATION = 0.52; // matches the file's existing reveal-animation convention
+// visible/hidden is a scale+opacity "birth" — buttons grow into place rather
+// than just fading, mirrored perfectly in both directions. opts.resetPosition
+// (default true) can be set false to reveal in place instead of snapping to
+// the natural x:0,y:0 nav position — used when revealing docked at the
+// footer anchors (see footer parallax script). opts.onComplete lets callers
+// chain follow-up work (e.g. snapping position back) after the tween lands.
+function setNavVisibility(visible, opts) {
+  opts = opts || {};
   // State guard: the scroll handler calls this every scroll event, and with
   // normalizeScroll driving touch scrolling from rAF that's every frame —
-  // each redundant gsap.to restarted the 0.25s fade from its current
-  // progress, so it never completed crisply. Only tween on an actual flip.
+  // each redundant gsap.to restarted the fade from its current progress, so
+  // it never completed crisply. Only tween on an actual flip. This also
+  // doubles as the cross-system lock: both this scroll handler and the
+  // footer-dock script (see footer parallax script) call setNavVisibility
+  // directly rather than mutating navShown themselves, so whichever one
+  // reaches a given transition first "claims" it and the other's call is a
+  // harmless no-op — no competing tweens.
   if (typeof gsap === 'undefined' || visible === navShown) return;
   navShown = visible;
-  gsap.to([menuBtn, bookBtn], {
+  const vars = {
     autoAlpha: visible ? 1 : 0,
-    duration: 0.25,
-    ease: 'power2.inOut',
+    scale: visible ? 1 : 0.9,
+    transformOrigin: '50% 50%',
+    // Keep clickability in lockstep with visibility — the footer-dock
+    // script (see footer parallax script) sets pointer-events:'none' on
+    // these buttons while docking and only ever restores 'auto' once the
+    // footer fully lands. If the user scrolls back up before that, control
+    // returns here with the buttons stuck unclickable despite looking
+    // normal. Setting it here every time we go visible self-heals that.
+    pointerEvents: visible ? 'auto' : 'none',
+    // Whenever this handler is the one making buttons visible, normalize
+    // their transform too — closes a race with the footer-dock hand-back
+    // (see footer parallax script) where reversing scroll direction mid
+    // fade-out could otherwise leave a button visible but still offset at
+    // its old footer-anchor position. undefined on the hide branch is a
+    // GSAP no-op, so hide behavior is unchanged.
+    x: (visible && opts.resetPosition !== false) ? 0 : undefined,
+    y: (visible && opts.resetPosition !== false) ? 0 : undefined,
+  };
+  // opts.instant skips the birth tween entirely (gsap.set, not .to) — used
+  // when bailing out of the footer's docked state on scroll-up (see footer
+  // parallax script), where the docked position sits mid-screen on mobile
+  // and a spring fade-out there reads as the buttons being stuck in place.
+  if (opts.instant) {
+    gsap.set([menuBtn, bookBtn], vars);
+    if (opts.onComplete) opts.onComplete();
+    return;
+  }
+  gsap.to([menuBtn, bookBtn], Object.assign({}, vars, {
+    duration: NAV_BIRTH_DURATION,
+    ease: 'spring',
     overwrite: 'auto', // still needed when direction flips mid-fade
-  });
+    onComplete: opts.onComplete,
+  }));
 }
 
 document.addEventListener('menu:close', () => { menuOpenScrollY = null; });
@@ -1285,7 +1379,7 @@ window.addEventListener('scroll', () => {
     // very edge doesn't start inside it.
     const gap = 8;
     const safeMargin = 16;
-    const desiredH = 272;
+    const desiredH = 300;
     const bookZoneStart = bookRect.top - gap;
     const bookZoneEnd   = bookRect.bottom + gap;
     let maxH;
@@ -1443,13 +1537,24 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     }
   }
 
+  // Skip autoplay video on data-saver / slow connections — cards stay on
+  // their poster frame and only stream when a user explicitly opens one.
+  // navigator.connection isn't available in every browser; treat that as
+  // "assume a good connection" rather than as a slow-path trigger.
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const DATA_SAVER = !!(conn && (conn.saveData || /^(slow-2g|2g|3g)$/.test(conn.effectiveType || '')));
+
   // Play/pause wheel videos by visibility. The wheel keeps every card in the
   // DOM while it rotates; without this every video streams + decodes at once.
+  // src itself is also deferred to first intersection (not assigned in
+  // buildCards) so a page load doesn't fire off all 14 requests together.
   const cardVidObserver = new IntersectionObserver((entries) => {
     entries.forEach((en) => {
       const v = en.target;
       v.dataset.inview = en.isIntersecting ? '1' : '';
       if (en.isIntersecting) {
+        if (DATA_SAVER) return;
+        if (!v.src && v.dataset.src) v.src = v.dataset.src;
         if (!document.body.classList.contains('lb-open')) v.play().catch(() => {});
       } else {
         v.pause();
@@ -1474,7 +1579,8 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       inner.className = 'rsg-card-inner';
 
       const video = document.createElement('video');
-      video.src = item.src;
+      video.dataset.src = item.src;
+      video.poster = item.src.replace('.mp4', '-poster.jpg');
       video.muted = true;
       video.loop = true;
       video.playsInline = true;
@@ -1482,7 +1588,10 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       video.preload = 'metadata';
       video.disablePictureInPicture = true;
       // Playback is gated by cardVidObserver (below) — only on-screen cards
-      // play, instead of all 14 videos decoding at once.
+      // play, instead of all 14 videos decoding at once. The poster covers
+      // the card until then, and src itself isn't assigned until a card is
+      // actually near the viewport (see cardVidObserver) so a page load
+      // doesn't fire 14 requests at once.
       cardVidObserver.observe(video);
 
       const play = document.createElement('div');
@@ -1657,6 +1766,7 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
   window.openLightbox = function (index) {
     const item = galleryItems[index];
     if (!item) return;
+    video.poster = item.src.replace('.mp4', '-poster.jpg');
     video.src = item.src;
     titleEl.textContent = item.eyebrow;
     descEl.textContent  = item.desc;
@@ -1711,6 +1821,12 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     // Deceleration curve for the footer's landing — fast start, gradual glide to a stop.
     const easeLand = gsap.parseEase('power3.out');
 
+    // Contact info fades in only after the nav buttons finish docking —
+    // hidden up front so there's no flash before the trigger fires.
+    const contactCol = document.querySelector('.footer-contact-col');
+    if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
+    let contactRevealed = false;
+
     function captureNatural() {
       gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
       return {
@@ -1726,56 +1842,110 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     let raf = 0;
     let prevFooterAnimActive = false;
     let landed = false;
+    // True once the buttons have fully landed + revealed. While true, the
+    // whole footer+button system (parallax, opacity, position) holds fixed
+    // regardless of scroll — buttons only fly back once the footer genuinely
+    // leaves the viewport (footerAnimActive goes false), not just because the
+    // user scrolled up a little within the footer zone.
+    let docked = false;
 
     function tick() {
       raf = 0;
       const vH = window.innerHeight;
       const scrollY = window.scrollY;
+      const mobile = window.matchMedia('(max-width: 767px)').matches;
+      const footerRect = footer.getBoundingClientRect();
+
+      // Use maxScroll as the end reference — footer.offsetTop may exceed maxScroll due to pin spacers
       const maxScroll = document.body.scrollHeight - vH;
-      const startScroll = footer.offsetTop - vH;
-      const raw = Math.max(0, Math.min(1, (scrollY - startScroll) / (maxScroll - startScroll)));
+      const startScroll = footer.offsetTop - vH; // scroll pos when footer top enters viewport
+      // Mobile: treat "within a few px of maxScroll" as fully at the bottom.
+      // Momentum/rubber-band scrolling on mobile routinely settles 1-6px
+      // short of the browser's true max-scroll on sub-pixel/fractional-DPR
+      // positions — short of a genuine second gesture, but enough that the
+      // exact-equality raw===1 this formula otherwise needs never actually
+      // landed, leaving the footer visibly a hair short of docked. This is
+      // in addition to (not instead of) the ScrollTrigger 'refresh' listener
+      // below, which covers the separate case of maxScroll itself shifting
+      // after the user's last scroll input.
+      const atBottom = mobile && scrollY >= maxScroll - 6;
+      const raw = atBottom ? 1 : Math.max(0, Math.min(1, (scrollY - startScroll) / (maxScroll - startScroll)));
+
+      // Mobile-only: bail out of the docked end-state the instant the user
+      // scrolls back up, instead of waiting for the footer to fully leave the
+      // viewport (leavingZone below). On mobile the docked buttons sit
+      // mid-screen (centered footer anchors), so the slow spring fade-out
+      // otherwise used there reads as the buttons being "stuck" while the
+      // user is already scrolling away. 0.98 (not 1) gives a small dead zone
+      // against sub-pixel scroll-bounce jitter right at the resting point.
+      if (mobile && docked && raw < 0.98) {
+        docked = false;
+        landed = false;
+        setNavVisibility(false, { instant: true });
+        contactRevealed = false;
+        if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
+      }
 
       if (Math.abs(raw - lastRaw) < 0.00005) return;
       lastRaw = raw;
 
-      // Unfreeze when user scrolls back up
-      if (raw < 1) landed = false;
+      // Unfreeze the position-lock on scroll-up — but not while docked,
+      // since docked means "hold everything" regardless of raw moving down.
+      if (raw < 1 && !docked) landed = false;
 
-      footerAnimActive = raw > 0.02;
+      // Exact pixel boundary rather than a scroll-distance epsilon: "active"
+      // means any part of the footer is on screen, so the complementary
+      // state (footerRect.top >= vH) is a clean "0px of footer visible" —
+      // the trigger the nav reappear-at-top waits for (see leavingZone).
+      footerAnimActive = footerRect.top < vH;
+
+      const enteringZone = footerAnimActive && !prevFooterAnimActive;
+      const leavingZone  = !footerAnimActive && prevFooterAnimActive;
 
       // The buttons fly from their nav position to the footer anchors across
-      // this whole scroll range, passing directly over #socials (which stays
-      // sticky-visible mid-viewport the entire time). Keep them hidden and
-      // non-interactive while in transit — visible + clickable only once
-      // they're locked into their final footer position — instead of forcing
-      // them fully visible/clickable the instant the flight starts.
-      if (footerAnimActive && !prevFooterAnimActive) {
-        navShown = false;
-        gsap.set([menuBtnEl, bookBtnEl], { autoAlpha: 0, pointerEvents: 'none' });
+      // this whole scroll range, passing directly over the page content in
+      // between. Keep them hidden and non-interactive while in transit —
+      // visible + clickable only once they're locked into their final
+      // footer position — instead of forcing them fully visible/clickable
+      // the instant the flight starts.
+      if (enteringZone) {
+        docked = false;
+        setNavVisibility(false);
       }
+
+      if (leavingZone) {
+        // Footer has genuinely scrolled out of view — hand control back to
+        // the plain nav scroll handler. Fade out first, and only once fully
+        // invisible snap x/y back to the natural nav position, so there's
+        // never a visible jump.
+        docked = false;
+        landed = false;
+        setNavVisibility(false, {
+          onComplete: function () {
+            gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
+          },
+        });
+        contactRevealed = false;
+        if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
+      }
+
       prevFooterAnimActive = footerAnimActive;
+
+      // Docked hold: footer is fully flush and buttons are fully visible +
+      // pinned at their anchors — freeze the footer's own parallax too, so
+      // buttons never detach from their anchors while the user scrolls
+      // around inside the footer zone.
+      if (docked) return;
 
       const e = easeLand(raw);
 
       // Footer parallax: decelerates into its landed position
       gsap.set(footer, { yPercent: 6 * (1 - e) });
 
-      // Fade the buttons back in only in the final stretch of the flight, so
-      // they appear right as they settle into the footer anchors rather than
-      // being visible for the whole trip across #socials.
-      if (footerAnimActive) {
-        const REVEAL_START = 0.9;
-        const reveal = raw <= REVEAL_START ? 0 : (raw - REVEAL_START) / (1 - REVEAL_START);
-        navShown = reveal > 0;
-        gsap.set([menuBtnEl, bookBtnEl], {
-          autoAlpha: reveal,
-          pointerEvents: raw >= 1 ? 'auto' : 'none',
-        });
-      }
-
       // Once landed at endpoint, hold position — don't re-read live DOM positions
       if (landed) return;
 
+      // Read anchor positions AFTER footer has been moved
       const mA = menuAnc.getBoundingClientRect();
       const bA = bookAnc.getBoundingClientRect();
 
@@ -1789,8 +1959,21 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       gsap.set(menuBtnEl, { x: (mA.left - nat.mx) * e, y: (menuTargetY - nat.my) * e });
       gsap.set(bookBtnEl, { x: (bookTargetX - nat.bx) * e, y: (bookTargetY - nat.by) * e });
 
-      // Freeze once fully landed
-      if (raw >= 1) landed = true;
+      // Freeze once fully landed, and — the buttons are now positioned at
+      // their final footer anchors — reveal in place with the birth tween
+      // rather than continuing to snap-set x/y to 0. `docked` also guards
+      // this from re-firing on subsequent frames where raw stays >= 1.
+      if (raw >= 1) {
+        landed = true;
+        if (!docked) {
+          docked = true;
+          setNavVisibility(true, { resetPosition: false });
+          if (!contactRevealed && contactCol) {
+            contactRevealed = true;
+            gsap.to(contactCol, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.15 });
+          }
+        }
+      }
     }
 
     function onScroll() {
@@ -1805,8 +1988,27 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       nat = captureNatural();
       lastRaw = -1;
       landed = false;
+      docked = false;
       tick();
     });
+
+    // Any ScrollTrigger.refresh() elsewhere on the page (e.g. #radial-gallery's
+    // own resize-driven refresh) can shift footer.offsetTop / document height
+    // without firing a scroll event of its own — recompute directly off the
+    // refresh event so the footer's dock state can't go stale waiting for the
+    // user's next scroll input. Also clear docked/landed (not just lastRaw) —
+    // once docked is true, tick() returns before ever touching the footer's
+    // own yPercent transform again, so if docked had already latched on at a
+    // moment when the geometry was still mid-settle, the footer's visual
+    // parallax would otherwise stay frozen short of actually landed forever.
+    if (typeof ScrollTrigger !== 'undefined') {
+      ScrollTrigger.addEventListener('refresh', function () {
+        lastRaw = -1;
+        landed = false;
+        docked = false;
+        tick();
+      });
+    }
 
     requestAnimationFrame(function () { requestAnimationFrame(tick); });
   }
@@ -1822,15 +2024,29 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
 <script>
 // ── Footer title slide-in animation ──────────────────────────
 (function() {
-  const unique = document.getElementById('footerWordUnique');
-  const touch  = document.getElementById('footerWordTouch');
+  const unique    = document.getElementById('footerWordUnique');
+  const touch     = document.getElementById('footerWordTouch');
+  const beautyTag = document.querySelector('.footer-beauty-tag');
+  const location  = document.querySelector('.footer-location');
   if (!unique || !touch) return;
+
+  // Beauty Salon tag + Curaçao line stay hidden until the UNIQUE/TOUCH
+  // slide-in finishes (0.9s, +0.08s delay on TOUCH — see .revealed rules).
+  const subEls = [beautyTag, location].filter(Boolean);
+  if (subEls.length && typeof gsap !== 'undefined') gsap.set(subEls, { opacity: 0, y: 16 });
+
+  const HEADER_REVEAL_MS = 980;
 
   const observer = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
         unique.classList.add('revealed');
         touch.classList.add('revealed');
+        if (subEls.length && typeof gsap !== 'undefined') {
+          setTimeout(function() {
+            gsap.to(subEls, { opacity: 1, y: 0, duration: 0.8, ease: 'spring', stagger: 0.08 });
+          }, HEADER_REVEAL_MS);
+        }
         observer.disconnect();
       }
     });

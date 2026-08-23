@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Service Experience — Unique Touch Beauty Salon</title>
+  <title>Unique Touch Beauty Salon — Find Your Service</title>
   <link rel="icon" type="image/png" href="brand_assets/favicon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -136,8 +136,15 @@
       display: flex; flex-direction: row; justify-content: flex-end; align-items: center;
       gap: 16px; margin-top: 16px;
     }
-    .menu-social-link { color: var(--white); text-decoration: none; display: flex; align-items: center; transition: color 0.25s ease; }
-    .menu-social-link:hover { color: var(--gold); }
+    .menu-social-link {
+      width: 2.125rem; height: 2.125rem; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.55); text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .menu-social-link:hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); border-color: var(--gold); }
 
     /* ════════ BUTTONS (copied from index.html) ════════ */
     .btn-gold {
@@ -369,7 +376,7 @@
 
     .detail-content {
       position: absolute; left: 0; top: 0; height: 100%;
-      width: calc(40vw - 60px);
+      width: calc(50vw - 30px);
       display: flex; flex-direction: column; align-items: center; text-align: center;
       padding: clamp(2rem, 4vw, 4.5rem) clamp(1.75rem, 3.4vw, 4rem);
       overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
@@ -594,7 +601,7 @@
     /* detail image (right anchor) — pinned to viewport on desktop, in-flow on mobile */
     .detail-image-frame {
       position: fixed; top: 30px; right: 30px; bottom: 30px; left: auto;
-      width: 60vw;
+      width: calc(50vw - 30px);
       z-index: 1;
     }
     .detail-image {
@@ -705,9 +712,9 @@
       </ul>
       <div class="menu-divider"></div>
       <div class="menu-socials">
-        <a href="https://www.facebook.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
-        <a href="https://www.instagram.com/uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
-        <a href="https://www.tiktok.com/@uniquetouchbeautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z"/></svg></a>
+        <a href="https://www.facebook.com/Uniquetouch.beautysalonn" target="_blank" rel="noopener" class="menu-social-link" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a href="https://www.instagram.com/uniquetouch.beautysalon/" target="_blank" rel="noopener" class="menu-social-link" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+        <a href="https://www.tiktok.com/@uniquetouch.beautysalon" target="_blank" rel="noopener" class="menu-social-link" aria-label="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z"/></svg></a>
       </div>
     </div>
   </div>
@@ -946,7 +953,7 @@
       menuPanel.style.width = panelW + 'px';
       setTimeout(() => {
         menuPanel.style.transition = 'height 0.36s cubic-bezier(0.65,0,0.35,1)';
-        menuPanel.style.height = '224px';
+        menuPanel.style.height = '256px';
         setTimeout(() => menuPanel.classList.add('links-visible'), 120);
         setTimeout(() => { menuPanel.style.height = 'auto'; }, 360);
       }, 300);
@@ -1009,6 +1016,12 @@
   const mq = window.matchMedia('(max-width: 767px)');
   let LAYOUT = mq.matches ? MOBILE : DESKTOP;
 
+  // Skip reel autoplay on data-saver / slow connections — slots stay on
+  // their poster image; opening a category's detail panel (an explicit
+  // click) is still the way video actually streams.
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const DATA_SAVER = !!(conn && (conn.saveData || /^(slow-2g|2g|3g)$/.test(conn.effectiveType || '')));
+
   // state
   let targetPos = POS_MIN, pos = POS_MIN, activeIdx = POS_MIN;
   let phase = 'idle';              // idle | opening | detail | closing
@@ -1061,11 +1074,14 @@
       const slot = document.createElement('div'); slot.className = 'img-slot';
       const inner = document.createElement('div'); inner.className = 'img-slot-inner';
       const vid = document.createElement('video');
-      vid.src = cat.video; vid.muted = true; vid.loop = true;
+      vid.dataset.src = cat.video; vid.poster = cat.img; vid.muted = true; vid.loop = true;
       vid.playsInline = true; vid.setAttribute('playsinline', '');
       vid.disablePictureInPicture = true; vid.preload = 'metadata';
       // No autoplay: the tick loop plays only the ~3 slots nearest the viewport
-      // (18 rendered slots would otherwise all stream + decode at once).
+      // (18 rendered slots would otherwise all stream + decode at once). src
+      // itself is deferred until a slot first qualifies (see tick()) so page
+      // load doesn't fire requests for all 18 at once; the poster (existing
+      // category card image) covers the slot until then.
       slotVids.push(vid);
       const grad = document.createElement('div'); grad.className = 'slot-grad';
       const ring = document.createElement('div'); ring.className = 'slot-ring';
@@ -1129,10 +1145,15 @@
       // everything while the detail panel covers the reel).
       const v = slotVids[i];
       if (v) {
-        const shouldPlay = !detailOpen && dist < 1.75;
+        const shouldPlay = !DATA_SAVER && !detailOpen && dist < 1.75;
         if (shouldPlay !== v.__utPlaying) {
           v.__utPlaying = shouldPlay;
-          if (shouldPlay) v.play().catch(() => {}); else v.pause();
+          if (shouldPlay) {
+            if (!v.src && v.dataset.src) v.src = v.dataset.src;
+            v.play().catch(() => {});
+          } else {
+            v.pause();
+          }
         }
       }
     }
@@ -1147,14 +1168,18 @@
       titleGrads[i].style.clipPath = `inset(${((1 - tColor) * 100).toFixed(1)}% 0 0 0)`;
       titleRows[i].style.opacity = (0.7 + 0.3 * tColor).toFixed(3);
       const fontVh = L.titleFontVhMin + (L.titleFontVhMax - L.titleFontVhMin) * tType;
-      h3.style.fontSize = fontVh.toFixed(2) + 'dvh';
+      // dvh-only sizing ignores column width: on tall/narrow (tablet-portrait)
+      // viewports the title grows large enough to crowd the descriptor out of
+      // its 50%-wide column. Cap by width too so the row always fits.
+      const fontPx = mq.matches ? fontVh * vh : Math.min(fontVh * vh, window.innerWidth * 0.052);
+      h3.style.fontSize = fontPx.toFixed(2) + 'px';
 
       // active-amount: drives icon reveal/rotation, title nudge and descriptor reveal in lockstep
       const td = Math.max(0, 1 - dist * 2.8);
       const icon = titleIcons[i];
-      const iconVh = fontVh * 0.46;
-      icon.style.height = iconVh.toFixed(2) + 'dvh';
-      icon.style.width = (td * iconVh).toFixed(2) + 'dvh';
+      const iconPx = fontPx * 0.46;
+      icon.style.height = iconPx.toFixed(2) + 'px';
+      icon.style.width = (td * iconPx).toFixed(2) + 'px';
       icon.style.opacity = td.toFixed(3);
       icon.style.transform = `rotate(${(-90 + 90 * td).toFixed(1)}deg)`;
       h3.style.transform = `translateX(${(td * 0.18).toFixed(3)}em) translateY(0.05em)`;
@@ -1320,7 +1345,7 @@
 
          <div class="detail-image-frame">
            <div class="detail-image" id="dImage">
-             <video src="${cat.video}" muted loop autoplay playsinline disablepictureinpicture preload="auto"></video>
+             <video src="${cat.video}" poster="${cat.img}" muted loop autoplay playsinline disablepictureinpicture preload="auto"></video>
              <div class="slot-grad"></div>
            </div>
            <button class="btn-ghost" data-detail-reveal data-detail-close>
