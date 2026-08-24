@@ -25,16 +25,28 @@ const mime = {
   '.woff2': 'font/woff2',
 };
 
+// Mirrors GitHub Pages' folder-index resolution: a directory (or an
+// extensionless path with no matching file) falls back to its index.html,
+// so clean routes like /explore-experiences/ or /explore-experiences work
+// the same locally as they do in production.
+async function resolveFilePath(urlPath) {
+  let filePath = join(__dirname, urlPath);
+  let st = await stat(filePath);
+  if (st.isDirectory()) {
+    filePath = join(filePath, 'index.html');
+    st = await stat(filePath);
+  }
+  return { filePath, size: st.size };
+}
+
 createServer(async (req, res) => {
   let urlPath = req.url.split('?')[0];
   if (urlPath === '/') urlPath = '/index.html';
 
-  const filePath = join(__dirname, urlPath);
-  const ext = extname(filePath).toLowerCase();
-  const contentType = mime[ext] || 'application/octet-stream';
-
   try {
-    const { size } = await stat(filePath);
+    const { filePath, size } = await resolveFilePath(urlPath);
+    const ext = extname(filePath).toLowerCase();
+    const contentType = mime[ext] || 'application/octet-stream';
     const range = req.headers.range;
 
     if (range) {

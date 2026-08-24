@@ -21,8 +21,8 @@ const DEVICES = {
 
 const PAGES = {
   index:   'http://localhost:3000/',
-  service: 'http://localhost:3000/service-experience.html',
-  gallery: 'http://localhost:3000/gallery.html',
+  service: 'http://localhost:3000/book-your-visit/',
+  gallery: 'http://localhost:3000/explore-experiences/',
 };
 
 async function shoot(browser, url, dev, name, fullPage = true) {

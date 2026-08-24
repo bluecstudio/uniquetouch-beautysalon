@@ -27,10 +27,10 @@
   var MIN_HOLD  = 1500;        // ms — minimum loader choreography before reveal
   var HARD_CAP  = 4000;        // ms — reveal no matter what
 
-  // Editorial caption per destination (by filename; query ignored).
+  // Editorial caption per destination (by last clean-URL path segment; query ignored).
   var CAPTIONS = {
-    'service-experience.html': ['EXPERT', 'CARE'],
-    'gallery.html':            ['REAL',  'RESULTS']
+    'book-your-visit':      ['EXPERT', 'CARE'],
+    'explore-experiences':  ['REAL',  'RESULTS']
   };
 
   // The nav menu's rotating graphic, inlined so it scales crisply.
@@ -56,7 +56,7 @@
 
   function fileOf(url) {
     try {
-      var p = new URL(url, window.location.href).pathname;
+      var p = new URL(url, window.location.href).pathname.replace(/\/$/, '');
       var base = p.split('/').pop();
       return base || 'index.html';
     } catch (e) { return ''; }
@@ -132,7 +132,12 @@
     try { url = new URL(a.href, window.location.href); }
     catch (err) { return false; }
     if (url.origin !== window.location.origin) return false;
-    if (!/\.html($|[?#])/i.test(url.pathname + url.search)) return false;
+    // Eligible destinations: legacy .html pages, and clean folder routes
+    // (e.g. /explore-experiences/) whose last path segment has no file
+    // extension. Anything else with an extension (images, css, js, ...) is
+    // a real asset link, not a page — skip it.
+    var lastSegment = url.pathname.replace(/\/$/, '').split('/').pop();
+    if (lastSegment.indexOf('.') !== -1 && !/\.html$/i.test(lastSegment)) return false;
     if (url.href === window.location.href) return false;
     return true;
   }
