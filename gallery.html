@@ -87,6 +87,21 @@
       z-index: 150;
       transition: filter 0.3s ease, opacity 0.3s ease;
     }
+    /* Same treatment for the static footer Book button — #bookBtn itself is
+       always hidden while in the footer zone now (see footer parallax
+       script), so this is the one actually visible/overlappable by the
+       panel when the menu is opened from the footer. `~ footer #...` reaches
+       it since <footer> is a body-level sibling of .menu-backdrop. Both
+       filter AND opacity need !important here (unlike #bookBtn above): the
+       footer button's own warp-in/out tweens (see footer parallax script)
+       set an inline `filter` too, not just opacity, which otherwise wins. */
+    .menu-backdrop.is-open ~ footer #footerBookBtn {
+      filter: blur(4px) !important;
+      opacity: 0.35 !important;
+      pointer-events: none;
+      z-index: 150;
+      transition: filter 0.3s ease, opacity 0.3s ease;
+    }
 
     /* ── MENU BUTTON ─────────────────────────── */
     .menu-btn {
@@ -831,6 +846,27 @@
       display: flex;
       justify-content: flex-end;
     }
+    /* Hidden-at-rest state for the real, statically-positioned footer
+       buttons — warped in/out via GSAP (see footer parallax script) once
+       scroll reaches/leaves 100%, same recipe used for reveals elsewhere
+       in this file. No `transform`/`filter` transition here — GSAP owns
+       those, this is just the resting state so there's no flash of a
+       fully-visible button before JS runs. */
+    #footerBookBtn,
+    #footerMenuBtn {
+      opacity: 0;
+      transform: translateY(16px) scale(0.9);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+    /* Optical correction, footer copy only: the arrow glyph is a thin
+       trailing line on its left vs. a bold chevron point on its right, so
+       equal padding still reads as more space on the left. Nudges the
+       arrow left without touching the shared .btn-gold padding used
+       elsewhere. */
+    #footerBookBtn .btn-arrow {
+      margin-left: -2px;
+    }
     /* Bottom-center, independent of the menu anchor's flex position — see
        the mobile query which resets this back to static/centered within
        its own column-reverse stack. */
@@ -857,6 +893,8 @@
          share one vertical center line. */
       #menuBtn { top: 22px; left: 22px; height: 2.25rem; }
       #bookBtn { top: 22px; right: 22px; }
+      /* Static footer twin — same size reduction as its nav counterpart. */
+      #footerMenuBtn { height: 2.25rem; }
       #gallery-intro {
         min-height: calc(100vh - 320px);
         min-height: calc(100svh - 320px);
@@ -1017,6 +1055,7 @@
       .footer-contact span,
       .footer-contact span:last-child { font-size: 13px; }
       #bookBtn { padding: 10px 20px; }
+      #footerBookBtn { padding: 10px 20px; }
     }
 
     /* ── small phone (≤480) ── */
@@ -1025,6 +1064,7 @@
       /* Book pill keeps its label (matches desktop); just tighten it slightly
          so Menu + pill clear each other down to 320px-wide screens. */
       #bookBtn { padding: 10px 16px; }
+      #footerBookBtn { padding: 10px 16px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1193,12 +1233,30 @@
       <div class="footer-top-right">
         <p class="footer-location">Beauty Salon in the beautiful island of <em>Curaçao</em></p>
 
-        <div id="footerBookAnchor"></div>
+        <!-- Real, statically-laid-out button — NOT position:fixed, no JS
+             position tracking. Warp-fades in via the footer parallax
+             script once scroll reaches 100% (see footer parallax script),
+             independent of the floating #bookBtn nav FAB above. -->
+        <div id="footerBookAnchor"><a href="service-experience.html" class="btn-gold" id="footerBookBtn"><span class="btn-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="btn-label">Find Your <span class="word-swap"><span class="word-swap-mono">Treatment</span><span class="word-swap-cinzel">Treatment</span></span></span></a></div>
       </div>
     </div>
     <div class="footer-spacer"></div>
     <div class="footer-bottom">
-      <div id="footerMenuAnchor"></div>
+      <!-- Same idea as #footerBookBtn above — a real, static Menu button.
+           Clicking it just clicks the real #menuBtn so it reuses that
+           element's own open/close logic (see the menu open/close script)
+           instead of duplicating it. -->
+      <div id="footerMenuAnchor">
+        <button class="menu-btn" id="footerMenuBtn" aria-expanded="false" aria-controls="menuPanel">
+          <span class="menu-btn-icon">
+            <img src="brand_assets/buller-list.svg" width="14" height="14" alt="" aria-hidden="true">
+          </span>
+          <span class="menu-btn-label">
+            <span class="lbl-menu">Menu</span>
+            <span class="lbl-close">Close</span>
+          </span>
+        </button>
+      </div>
       <div class="footer-contact-col">
         <p class="footer-col-label">Contact Us</p>
         <div class="footer-contact">
@@ -1345,22 +1403,36 @@ window.addEventListener('scroll', () => {
   const menuBtn      = document.getElementById('menuBtn');
   const menuPanel    = document.getElementById('menuPanel');
   const menuBackdrop = document.getElementById('menuBackdrop');
+  // Static footer twins (see footer parallax script) — kept in sync with
+  // #menuBtn's own open/close state below so whichever pair is actually
+  // visible (nav FABs vs. footer-docked buttons) always shows the correct
+  // icon-rotate/label-swap, not just the one the click happened to reach.
+  const footerMenuBtn = document.getElementById('footerMenuBtn');
+  const footerBookBtn = document.getElementById('footerBookBtn');
+  const allMenuBtns = [menuBtn, footerMenuBtn].filter(Boolean);
   let isOpen = false;
 
   function openMenu() {
     if (isOpen) return;
     isOpen = true;
-    menuBtn.classList.add('is-open');
-    menuBtn.setAttribute('aria-expanded', 'true');
+    allMenuBtns.forEach((el) => { el.classList.add('is-open'); el.setAttribute('aria-expanded', 'true'); });
     menuBackdrop.classList.add('is-open');
     menuPanel.classList.add('is-open');
 
-    // Also read bookBtn's rect — on mobile the panel spans nearly the full width, so it
-    // passes directly under/over bookBtn too and must clear whichever button is further
-    // in the panel's growth direction, not just menuBtn.
-    const btnRect  = document.getElementById('menuBtn').getBoundingClientRect();
-    const bookRect = document.getElementById('bookBtn').getBoundingClientRect();
+    // Pin panel to the CURRENTLY VISIBLE button pair's rendered position —
+    // #menuBtn/#bookBtn are always hidden (opacity 0) while in the footer
+    // zone now (they no longer fly down to it), so anchoring to them there
+    // would pin the panel to their invisible top-corner resting spot instead
+    // of the real, visible footer buttons the user actually clicked.
+    // Also read the book button's rect — on mobile the panel spans nearly
+    // the full width, so it passes directly under/over it too and must
+    // clear whichever button is further in the panel's growth direction,
+    // not just the menu button.
     const openUpward = !!footerAnimActive;
+    const activeMenuBtn = (openUpward && footerMenuBtn) ? footerMenuBtn : menuBtn;
+    const activeBookBtn = (openUpward && footerBookBtn) ? footerBookBtn : bookBtn;
+    const btnRect  = activeMenuBtn.getBoundingClientRect();
+    const bookRect = activeBookBtn.getBoundingClientRect();
     menuPanel.dataset.openUpward = openUpward ? '1' : '0';
 
     // On mobile the panel is centered on screen and width-fitted so it never
@@ -1430,8 +1502,7 @@ window.addEventListener('scroll', () => {
   function closeMenu() {
     if (!isOpen) return;
     isOpen = false;
-    menuBtn.classList.remove('is-open');
-    menuBtn.setAttribute('aria-expanded', 'false');
+    allMenuBtns.forEach((el) => { el.classList.remove('is-open'); el.setAttribute('aria-expanded', 'false'); });
 
     menuPanel.classList.remove('links-visible');
     // Turn scrolling back off immediately so the height-collapse transition below
@@ -1812,41 +1883,59 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     const footer    = document.querySelector('footer');
     const menuBtnEl = document.getElementById('menuBtn');
     const bookBtnEl = document.getElementById('bookBtn');
-    const menuAnc   = document.getElementById('footerMenuAnchor');
-    const bookAnc   = document.getElementById('footerBookAnchor');
-    if (!footer || !menuBtnEl || !bookBtnEl || !menuAnc || !bookAnc) return;
+    const footerMenuBtn = document.getElementById('footerMenuBtn');
+    const footerBookBtn = document.getElementById('footerBookBtn');
+    if (!footer || !menuBtnEl || !bookBtnEl) return;
 
+    // The static footer Menu button just clicks the real #menuBtn, reusing
+    // its own open/close logic (see the menu open/close script) rather than
+    // duplicating it.
+    if (footerMenuBtn) footerMenuBtn.addEventListener('click', () => menuBtnEl.click());
+
+    const footerDockBtns = [footerMenuBtn, footerBookBtn].filter(Boolean);
+
+    // Set initial footer offset
     gsap.set(footer, { yPercent: 6 });
 
     // Deceleration curve for the footer's landing — fast start, gradual glide to a stop.
     const easeLand = gsap.parseEase('power3.out');
 
-    // Contact info fades in only after the nav buttons finish docking —
+    // Contact info fades in only after the footer buttons finish warping in —
     // hidden up front so there's no flash before the trigger fires.
     const contactCol = document.querySelector('.footer-contact-col');
     if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
     let contactRevealed = false;
 
-    function captureNatural() {
-      gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
-      return {
-        mx: menuBtnEl.getBoundingClientRect().left,
-        my: menuBtnEl.getBoundingClientRect().top,
-        bx: bookBtnEl.getBoundingClientRect().left,
-        by: bookBtnEl.getBoundingClientRect().top,
-      };
+    // Warp-in/out for the real, statically-positioned footer buttons — pure
+    // opacity/scale/y/blur, the same warp recipe used for reveals elsewhere
+    // in this file. No position math at all: these buttons live exactly
+    // where the footer's own CSS lays them out and never move, so there's
+    // nothing left to jitter.
+    function warpInFooterButtons() {
+      if (!footerDockBtns.length) return;
+      gsap.to(footerDockBtns, {
+        opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+        duration: 0.6, stagger: 0.08, ease: 'power2.out', overwrite: 'auto',
+      });
+      gsap.set(footerDockBtns, { pointerEvents: 'auto' });
     }
-    let nat = captureNatural();
+    function warpOutFooterButtons() {
+      if (!footerDockBtns.length) return;
+      gsap.to(footerDockBtns, {
+        opacity: 0, y: 16, scale: 0.9, filter: 'blur(8px)',
+        duration: 0.35, ease: 'power2.in', overwrite: 'auto',
+      });
+      gsap.set(footerDockBtns, { pointerEvents: 'none' });
+    }
 
     let lastRaw = -1;
     let raf = 0;
     let prevFooterAnimActive = false;
-    let landed = false;
-    // True once the buttons have fully landed + revealed. While true, the
-    // whole footer+button system (parallax, opacity, position) holds fixed
-    // regardless of scroll — buttons only fly back once the footer genuinely
-    // leaves the viewport (footerAnimActive goes false), not just because the
-    // user scrolled up a little within the footer zone.
+    // True once the footer buttons have fully warped in. While true, the
+    // whole footer+button system (parallax, footer buttons) holds fixed
+    // regardless of scroll — the footer buttons only warp back out once the
+    // footer genuinely leaves the viewport (footerAnimActive goes false), or
+    // on mobile, the instant the user scrolls back up out of fully docked.
     let docked = false;
 
     function tick() {
@@ -1873,25 +1962,17 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
 
       // Mobile-only: bail out of the docked end-state the instant the user
       // scrolls back up, instead of waiting for the footer to fully leave the
-      // viewport (leavingZone below). On mobile the docked buttons sit
-      // mid-screen (centered footer anchors), so the slow spring fade-out
-      // otherwise used there reads as the buttons being "stuck" while the
-      // user is already scrolling away. 0.98 (not 1) gives a small dead zone
+      // viewport (leavingZone below). 0.98 (not 1) gives a small dead zone
       // against sub-pixel scroll-bounce jitter right at the resting point.
       if (mobile && docked && raw < 0.98) {
         docked = false;
-        landed = false;
-        setNavVisibility(false, { instant: true });
+        warpOutFooterButtons();
         contactRevealed = false;
         if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
       }
 
       if (Math.abs(raw - lastRaw) < 0.00005) return;
       lastRaw = raw;
-
-      // Unfreeze the position-lock on scroll-up — but not while docked,
-      // since docked means "hold everything" regardless of raw moving down.
-      if (raw < 1 && !docked) landed = false;
 
       // Exact pixel boundary rather than a scroll-distance epsilon: "active"
       // means any part of the footer is on screen, so the complementary
@@ -1902,39 +1983,29 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       const enteringZone = footerAnimActive && !prevFooterAnimActive;
       const leavingZone  = !footerAnimActive && prevFooterAnimActive;
 
-      // The buttons fly from their nav position to the footer anchors across
-      // this whole scroll range, passing directly over the page content in
-      // between. Keep them hidden and non-interactive while in transit —
-      // visible + clickable only once they're locked into their final
-      // footer position — instead of forcing them fully visible/clickable
-      // the instant the flight starts.
+      // The floating nav FABs (#menuBtn/#bookBtn) simply hide the instant the
+      // footer zone is entered — they no longer fly anywhere. They reappear
+      // on their own via the plain nav scroll handler (see nav scroll
+      // script, gated on footerAnimActive) once the footer has fully left
+      // the viewport again on scroll-up — nothing further needed here.
       if (enteringZone) {
         docked = false;
         setNavVisibility(false);
       }
 
       if (leavingZone) {
-        // Footer has genuinely scrolled out of view — hand control back to
-        // the plain nav scroll handler. Fade out first, and only once fully
-        // invisible snap x/y back to the natural nav position, so there's
-        // never a visible jump.
+        // Footer has genuinely scrolled out of view — hand nav visibility
+        // back to the plain scroll handler, and warp the footer buttons out.
         docked = false;
-        landed = false;
-        setNavVisibility(false, {
-          onComplete: function () {
-            gsap.set([menuBtnEl, bookBtnEl], { x: 0, y: 0 });
-          },
-        });
+        warpOutFooterButtons();
         contactRevealed = false;
         if (contactCol) gsap.set(contactCol, { opacity: 0, y: 24 });
       }
 
       prevFooterAnimActive = footerAnimActive;
 
-      // Docked hold: footer is fully flush and buttons are fully visible +
-      // pinned at their anchors — freeze the footer's own parallax too, so
-      // buttons never detach from their anchors while the user scrolls
-      // around inside the footer zone.
+      // Docked hold: footer is fully flush and its own buttons are fully
+      // warped in — freeze the footer's own parallax too.
       if (docked) return;
 
       const e = easeLand(raw);
@@ -1942,36 +2013,12 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       // Footer parallax: decelerates into its landed position
       gsap.set(footer, { yPercent: 6 * (1 - e) });
 
-      // Once landed at endpoint, hold position — don't re-read live DOM positions
-      if (landed) return;
-
-      // Read anchor positions AFTER footer has been moved
-      const mA = menuAnc.getBoundingClientRect();
-      const bA = bookAnc.getBoundingClientRect();
-
-      const safe = 20;
-      const menuH = menuBtnEl.offsetHeight || 22;
-      const bookH = bookBtnEl.offsetHeight || 38;
-      const menuTargetY = Math.min(mA.top, vH - menuH - safe);
-      const bookTargetY = Math.min(bA.top, vH - bookH - safe);
-      const bookTargetX = bA.right - bookBtnEl.offsetWidth;
-
-      gsap.set(menuBtnEl, { x: (mA.left - nat.mx) * e, y: (menuTargetY - nat.my) * e });
-      gsap.set(bookBtnEl, { x: (bookTargetX - nat.bx) * e, y: (bookTargetY - nat.by) * e });
-
-      // Freeze once fully landed, and — the buttons are now positioned at
-      // their final footer anchors — reveal in place with the birth tween
-      // rather than continuing to snap-set x/y to 0. `docked` also guards
-      // this from re-firing on subsequent frames where raw stays >= 1.
       if (raw >= 1) {
-        landed = true;
-        if (!docked) {
-          docked = true;
-          setNavVisibility(true, { resetPosition: false });
-          if (!contactRevealed && contactCol) {
-            contactRevealed = true;
-            gsap.to(contactCol, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.15 });
-          }
+        docked = true;
+        warpInFooterButtons();
+        if (!contactRevealed && contactCol) {
+          contactRevealed = true;
+          gsap.to(contactCol, { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.15 });
         }
       }
     }
@@ -1985,9 +2032,7 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     window.addEventListener('scrollend', function () { lastRaw = -1; tick(); }, { passive: true });
 
     window.addEventListener('resize', function () {
-      nat = captureNatural();
       lastRaw = -1;
-      landed = false;
       docked = false;
       tick();
     });
@@ -1996,20 +2041,19 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     // own resize-driven refresh) can shift footer.offsetTop / document height
     // without firing a scroll event of its own — recompute directly off the
     // refresh event so the footer's dock state can't go stale waiting for the
-    // user's next scroll input. Also clear docked/landed (not just lastRaw) —
-    // once docked is true, tick() returns before ever touching the footer's
-    // own yPercent transform again, so if docked had already latched on at a
-    // moment when the geometry was still mid-settle, the footer's visual
-    // parallax would otherwise stay frozen short of actually landed forever.
+    // user's next scroll input. Forcing a full resync is harmless when
+    // nothing was actually stale — warpInFooterButtons()/setNavVisibility()
+    // are driven by plain GSAP tweens that no-op sensibly if already in the
+    // target state.
     if (typeof ScrollTrigger !== 'undefined') {
       ScrollTrigger.addEventListener('refresh', function () {
         lastRaw = -1;
-        landed = false;
         docked = false;
         tick();
       });
     }
 
+    // Run once after layout settles (all pin spacers added)
     requestAnimationFrame(function () { requestAnimationFrame(tick); });
   }
 
