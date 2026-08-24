@@ -4396,6 +4396,27 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     _vmObs.observe(hero);
 
+    // Defers a pending height-only refresh until the current scroll gesture
+    // has actually settled (scrollend), instead of firing mid-drag. heroTL's
+    // `end` is computed live off window.innerHeight — refreshing while the
+    // user's very first scroll is still in progress (exactly when the
+    // address bar auto-hides and innerHeight grows) recomputes that pin
+    // distance out from under the still-active scrub tween: the target
+    // progress at the current scrollY drops, so the ellipse visibly stalls
+    // until enough extra scroll accumulates to catch back up. `scrollend`
+    // doesn't fire on every browser/gesture combo, so a short timeout races
+    // it as a fallback — same pattern already used by the footer-dock script.
+    function _refreshAfterScrollSettles() {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        ScrollTrigger.refresh();
+      };
+      window.addEventListener('scrollend', finish, { once: true, passive: true });
+      setTimeout(finish, 400);
+    }
+
     let _resizeTimer, _lastW = window.innerWidth;
     function _onViewportChange() {
       clearTimeout(_resizeTimer);
@@ -4406,8 +4427,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // cheap refresh though — #hero's live height sync (syncHeroMinHeight)
         // needs ScrollTrigger to re-measure against it, or the pinned box and
         // the video's clip-path math (which already uses live innerHeight)
-        // drift apart, leaving a thin undimmed strip at the bottom edge.
-        if (Math.abs(window.innerWidth - _lastW) <= 1) { ScrollTrigger.refresh(); return; }
+        // drift apart, leaving a thin undimmed strip at the bottom edge. See
+        // _refreshAfterScrollSettles() above for why that refresh is deferred
+        // rather than fired immediately.
+        if (Math.abs(window.innerWidth - _lastW) <= 1) { _refreshAfterScrollSettles(); return; }
         _lastW = window.innerWidth;
         if (typeof svcComputeLayout === 'function') { svcComputeLayout(); svcInit(); }
         // Carousel DOM was just rebuilt — re-bind the scrubbed reveal to the new
