@@ -892,8 +892,12 @@
       /* Menu gets the same 2.25rem box as the Book pill so their contents
          share one vertical center line. */
       #menuBtn { top: 22px; left: 22px; height: 2.25rem; }
-      #bookBtn { top: 22px; right: 22px; }
-      /* Static footer twin — same size reduction as its nav counterpart. */
+      #bookBtn { top: 22px; right: 22px; font-size: 0.625rem; }
+      /* Static footer twins — same size reduction as their nav counterparts
+         (mirrors index.html's mobile Book-button rules): without the
+         font-size drop the footer buttons render visibly larger than the
+         nav ones. */
+      #footerBookBtn { font-size: 0.625rem; }
       #footerMenuBtn { height: 2.25rem; }
       #gallery-intro {
         min-height: calc(100vh - 320px);
@@ -1032,7 +1036,7 @@
         position: absolute;
         left: 50%;
         right: var(--gutter);
-        top: 42%;
+        top: calc(14% + 8.5rem);
         text-align: center;
         margin-left: 0;
       }
