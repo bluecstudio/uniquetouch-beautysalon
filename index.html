@@ -2906,7 +2906,7 @@
             <div class="vb-media">
               <video class="vb-video" src="brand_assets/hero-vid.mp4"
                      poster="brand_assets/hero-poster.webp"
-                     autoplay muted playsinline preload="auto"></video>
+                     autoplay muted loop playsinline preload="auto"></video>
             </div>
             <svg class="vb-ring-text" viewBox="0 0 163 162" width="163" height="162" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
 <ellipse cx="79.6036" cy="5.4811" rx="1.33333" ry="4" transform="rotate(-2.07651 79.6036 5.4811)" fill="white" fill-opacity="0.8"/>
@@ -2956,7 +2956,7 @@
       <div class="vm-wrap" id="vmWrap">
         <video id="vmVideo" src="brand_assets/hero-vid.mp4"
                poster="brand_assets/hero-poster.webp"
-               autoplay muted playsinline preload="auto"></video>
+               autoplay muted loop playsinline preload="auto"></video>
         <div class="vm-vignette" id="vmVignette"></div>
         <button class="vr-audio-btn muted" id="vrAudioBtn" aria-label="Toggle audio">
           <div class="vr-wave">
@@ -4362,32 +4362,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const svcSection = document.getElementById('services');
     if (!hero || !vmWrap || !vmMask || !vmVideo || !badge) return;
 
-    // hero-vid.mp4 is a compilation and cuts to plain wide/establishing shots
-    // (bare wall, a flat-lay lash tray, talking-to-camera moments) at several
-    // points across its ~46s runtime — any of those read as a jarring grey/
-    // neutral flash whenever caught by the circular reveal. 5.8–18.3s is a
-    // verified-clean stretch of tight, color-rich treatment close-ups only —
-    // loop both playbacks inside just that window instead of the whole clip.
-    const HERO_VID_LOOP_START = 5.8;
-    const HERO_VID_LOOP_END   = 18.3;
-    function loopWithinCleanRange(video) {
-      video.currentTime = HERO_VID_LOOP_START;
-      video.addEventListener('loadedmetadata', () => {
-        if (video.currentTime < HERO_VID_LOOP_START || video.currentTime >= HERO_VID_LOOP_END) {
-          video.currentTime = HERO_VID_LOOP_START;
-        }
-      });
-      video.addEventListener('timeupdate', () => {
-        if (video.currentTime >= HERO_VID_LOOP_END) video.currentTime = HERO_VID_LOOP_START;
-      });
-    }
-
     // Play badge video immediately on load
     const vbVid = badge.querySelector('.vb-video');
-    if (vbVid) { loopWithinCleanRange(vbVid); vbVid.play().catch(() => {}); }
+    if (vbVid) { vbVid.play().catch(() => {}); }
 
     // Play vm video when hero enters view (once — disconnect after first play)
-    loopWithinCleanRange(vmVideo);
     const _vmObs = new IntersectionObserver(
       (entries) => entries.forEach(e => {
         if (e.isIntersecting) { vmVideo.play().catch(() => {}); _vmObs.disconnect(); }
