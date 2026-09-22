@@ -5,7 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="format-detection" content="telephone=no">
   <title>Unique Touch Beauty Salon — See The Work</title>
+  <meta name="description" content="Real sessions, real results. Watch the moments behind Unique Touch Beauty Salon in Curaçao, and see how your visit could feel.">
+  <link rel="canonical" href="https://uniquetouch.beauty/explore-experiences/">
+  <meta name="theme-color" content="#0A0906">
+  <!-- Link previews (WhatsApp, iMessage, Instagram, Facebook, X) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Unique Touch Beauty Salon">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Unique Touch Beauty Salon — See The Work">
+  <meta property="og:description" content="Real sessions, real results. See how your visit could feel.">
+  <meta property="og:url" content="https://uniquetouch.beauty/explore-experiences/">
+  <meta property="og:image" content="https://uniquetouch.beauty/brand_assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Unique Touch Beauty Salon wordmark over a candlelit treatment room">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="/brand_assets/favicon-192.png">
+  <link rel="apple-touch-icon" href="/brand_assets/favicon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
@@ -153,6 +169,8 @@
       pointer-events: none; border-color: transparent;
     }
     .menu-panel.is-open { pointer-events: auto; border-color: rgba(201,168,76,0.75); }
+    /* Keep the collapsed panel's links out of the tab order (see index.html). */
+    .menu-panel:not(.is-open) { visibility: hidden; }
     .menu-panel-inner {
       opacity: 0; padding: 24px 36px;
       transition: opacity 0.2s ease;
@@ -226,6 +244,7 @@
       color: var(--bg); background: var(--gold);
       height: 2.25rem; padding: 0 12px; border-radius: 100px;
       text-decoration: none; overflow: hidden; isolation: isolate; min-width: 0;
+      white-space: nowrap; /* a fixed-height pill must never wrap its label */
     }
     .btn-gold::before {
       content: ''; position: absolute; inset: 0;
@@ -576,15 +595,21 @@
       inset: 0;
       z-index: 300;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 1.25rem;
       background: rgba(8, 7, 5, 0.88);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.45s cubic-bezier(0.22, 0.8, 0.32, 1);
-      padding: 4rem 2rem;
+      padding: 4.5rem 1rem 1.5rem;
+      /* Height the frame leaves for everything else in the column: the top
+         padding (close-button row), the gap, the caption and the bottom
+         padding. */
+      --lb-reserve: 12rem;
     }
     .lb-overlay.is-open {
       opacity: 1;
@@ -592,8 +617,13 @@
     }
     .lb-frame {
       position: relative;
-      width: min(1100px, 92vw);
-      aspect-ratio: 16 / 9;
+      /* Every gallery clip is portrait (9:16). The frame used to be a fixed
+         16:9 box, which letterboxed them to ~110px wide on a phone; now it
+         is sized by whichever runs out first — the screen's width, or the
+         height left over once the caption has its room. */
+      width: min(92vw, calc((100svh - var(--lb-reserve)) * 9 / 16), 506px);
+      aspect-ratio: 9 / 16;
+      flex-shrink: 0;
       border-radius: 18px;
       overflow: visible;
       transform: scale(0.92);
@@ -635,12 +665,8 @@
       background: #000;
     }
     .lb-caption {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: -5.5rem;
+      width: min(92vw, 34rem);
       text-align: center;
-      z-index: 2;
       pointer-events: none;
     }
     .lb-caption-title {
@@ -663,8 +689,8 @@
     }
     .lb-close {
       position: absolute;
-      top: -52px;
-      right: -2px;
+      top: max(16px, env(safe-area-inset-top));
+      right: max(16px, env(safe-area-inset-right));
       width: 40px; height: 40px;
       border-radius: 50%;
       background: var(--gold);
@@ -950,7 +976,7 @@
         font-family: 'Montserrat', sans-serif;
         font-style: normal;
         font-weight: 300;
-        font-size: 18px;
+        font-size: min(18px, 5.4vw); /* one line down to 320px screens */
         line-height: 1.45;
         letter-spacing: 0.01em;
         white-space: nowrap;
@@ -973,9 +999,6 @@
       .rsg-card-desc  { font-size: 0.6875rem; }
       .rsg-card-index { font-size: 0.5625rem; }
       .rsg-card-play  { width: 28px; height: 28px; top: 8px; right: 8px; }
-      .lb-overlay { padding: 5rem 1rem 6rem; }
-      .lb-close { top: -48px; right: 0; }
-      .lb-caption { top: -5rem; right: 0; }
       .lb-caption-title { font-size: 1.125rem; }
       .lb-caption-desc { font-size: 0.75rem; padding: 0 1rem; }
       /* Footer: capped to one screen height (fixed, not min-height) so the
@@ -1067,6 +1090,15 @@
       #footerBookBtn { padding: 10px 20px; }
     }
 
+    /* Phones held sideways: a portrait clip in a ~390px-tall screen. The
+       caption moves beside the video instead of under it, so the video keeps
+       all of the height. */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .lb-overlay { flex-direction: row; gap: 1.5rem; padding: 1rem 4.5rem 1rem 1.5rem; --lb-reserve: 2rem; }
+      .lb-caption { width: min(40vw, 22rem); text-align: left; }
+      .lb-caption-desc { margin: 0; padding: 0; }
+    }
+
     /* ── small phone (≤480) ── */
     @media (max-width: 480px) {
       .gi-header { font-size: 1.3rem; }
@@ -1074,6 +1106,15 @@
          so Menu + pill clear each other down to 320px-wide screens. */
       #bookBtn { padding: 10px 16px; }
       #footerBookBtn { padding: 10px 16px; }
+    }
+
+    /* ── 320px-class phones ── (same fix as the home page footer) The
+       footer's right-half column is only ~110px wide here: the Book pill ran
+       past the gold border and "Beauty Salon" broke onto two lines. */
+    @media (max-width: 359px) {
+      #bookBtn, #footerBookBtn { padding: 8px 10px; gap: 6px; }
+      #footerBookAnchor { width: auto; }
+      .footer-beauty-tag { font-size: 0.9rem; white-space: nowrap; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1121,6 +1162,31 @@
     @media (prefers-reduced-motion: reduce) {
       .scroll-hint-drip { animation: none; }
     }
+
+    /* ── KEYBOARD FOCUS + PRESS STATES ──
+       .btn-ghost's `outline: none` also beat the global :focus-visible ring.
+       Press feedback is opacity/transform only, on elements (or overlays)
+       that GSAP doesn't already own. */
+    .btn-ghost:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .btn-gold::after,
+    .btn-ghost::after {
+      content: ''; position: absolute; inset: 0; border-radius: 100px;
+      opacity: 0; pointer-events: none; z-index: 0; transition: opacity 0.25s ease;
+    }
+    .btn-gold::after  { background: rgba(10, 9, 6, 0.16); }
+    .btn-ghost::after { background: rgba(201, 168, 76, 0.16); }
+    .btn-gold:active::after,
+    .btn-ghost:active::after { opacity: 1; transition-duration: 0s; }
+
+    .menu-btn:active .menu-btn-label { opacity: 0.6; }
+    .menu-btn:active .menu-btn-icon { transform: rotate(180deg) scale(0.85); }
+    .menu-nav-links a:active { opacity: 0.7; }
+    .menu-social-link { transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    .menu-social-link:active { transform: scale(0.9); transition-duration: 0.2s, 0.2s, 0.2s, 0.08s; }
+    .footer-contact-link:active { opacity: 0.7; }
+    .rsg-card:active .rsg-card-inner { opacity: 0.85; }
+    .rsg-item.is-hover .rsg-card:active .rsg-card-play { transform: scale(0.88); }
+    .lb-close:active { transform: rotate(90deg) scale(0.9); }
   </style>
 </head>
 <body>
@@ -1224,10 +1290,36 @@
 <!-- ═══════════════ FOOTER ═══════════════ -->
 <footer>
   <div class="footer-bg">
-    <video class="footer-bg-video" autoplay muted loop playsinline preload="metadata" poster="/brand_assets/footbg-poster.jpg">
+    <video class="footer-bg-video" muted loop playsinline preload="none">
       <source src="/brand_assets/footer-mobile.mp4" media="(max-width: 767px)" type="video/mp4">
       <source src="/brand_assets/footbg.mp4" type="video/mp4">
     </video>
+    <script>
+      (function (video) {
+        /* Portrait clip on phones, landscape on desktop — <source media>
+           can't swap <video poster>, so match the poster per breakpoint too
+           (same as the home page footer). */
+        video.poster = window.matchMedia('(max-width: 767px)').matches
+          ? '/brand_assets/footer-mobile-poster.jpg'
+          : '/brand_assets/footbg-poster.jpg';
+        /* Lazy: start about one viewport before the footer arrives instead
+           of fetching it at page load; pause again once it's far away. */
+        if (!('IntersectionObserver' in window)) { video.play().catch(function () {}); return; }
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) video.play().catch(function () {});
+            else video.pause();
+          });
+        }, { rootMargin: '100% 0px' });
+        /* Only once the page has settled: ScrollTrigger inserts its pin
+           spacers after first layout, and until then the footer measures
+           far closer to the top than it really is (measured: the desktop
+           gallery started the footer clip at load because of it). */
+        window.addEventListener('load', function () {
+          requestAnimationFrame(function () { io.observe(video); });
+        });
+      })(document.currentScript.previousElementSibling);
+    </script>
     <div class="footer-bg-tint"></div>
     <div class="footer-bg-grain"></div>
   </div>
@@ -1282,25 +1374,35 @@
 
 <!-- ═══════════════ LIGHTBOX ═══════════════ -->
 <div class="lb-overlay" id="lbOverlay" role="dialog" aria-modal="true" aria-label="Video player" aria-hidden="true">
+  <!-- Close sits on the overlay itself, not inside the (scaling) frame, so it
+       is always pinned inside the viewport's top-right corner. -->
+  <button class="lb-close" id="lbClose" aria-label="Close video">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </button>
   <div class="lb-frame">
-    <button class="lb-close" id="lbClose" aria-label="Close video">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-    </button>
     <div class="lb-frame-inner">
       <video id="lbVideo" playsinline controls preload="metadata"></video>
     </div>
-    <div class="lb-caption">
-      <div class="lb-caption-title" id="lbTitle"></div>
-      <div class="lb-caption-desc"  id="lbDesc"></div>
-    </div>
+  </div>
+  <div class="lb-caption">
+    <div class="lb-caption-title" id="lbTitle"></div>
+    <div class="lb-caption-desc"  id="lbDesc"></div>
   </div>
 </div>
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js"></script>
+<script>
+// The site's named Spring curve, same as the home page. The nav and footer
+// reveals below ask for ease: 'spring'; without this they silently fell back
+// to GSAP's default ease.
+gsap.registerPlugin(CustomEase);
+CustomEase.create('spring', '0.22,0.8,0.32,1');
+</script>
 
 <script>
 // ──────────────────────────────────────────────────────────────
@@ -1423,10 +1525,15 @@ window.addEventListener('scroll', () => {
   const footerBookBtn = document.getElementById('footerBookBtn');
   const allMenuBtns = [menuBtn, footerMenuBtn].filter(Boolean);
   let isOpen = false;
+  // Set only when the menu is opened from the keyboard: where focus goes
+  // back to on close. Mouse/touch opens never move focus.
+  let menuReturnFocus = null;
 
   function openMenu() {
     if (isOpen) return;
     isOpen = true;
+    const active = document.activeElement;
+    menuReturnFocus = active && active.matches && active.matches('.menu-btn:focus-visible') ? active : null;
     allMenuBtns.forEach((el) => { el.classList.add('is-open'); el.setAttribute('aria-expanded', 'true'); });
     menuBackdrop.classList.add('is-open');
     menuPanel.classList.add('is-open');
@@ -1498,7 +1605,15 @@ window.addEventListener('scroll', () => {
     setTimeout(() => {
       menuPanel.style.transition = 'height 0.36s cubic-bezier(0.65,0,0.35,1)';
       menuPanel.style.height = targetH + 'px';
-      setTimeout(() => menuPanel.classList.add('links-visible'), 120);
+      setTimeout(() => {
+        menuPanel.classList.add('links-visible');
+        // Keyboard open: land on the first link instead of leaving focus
+        // behind the panel on the Menu button.
+        if (menuReturnFocus) {
+          const first = Array.from(menuPanel.querySelectorAll('a')).find((a) => a.offsetParent !== null);
+          if (first) first.focus({ preventScroll: true });
+        }
+      }, 120);
       // Only relax to natural/auto height if it fully fit within the clamp —
       // otherwise keep the explicit height so .menu-panel-inner's overflow-y:auto
       // scrolls the content instead
@@ -1514,6 +1629,8 @@ window.addEventListener('scroll', () => {
   function closeMenu() {
     if (!isOpen) return;
     isOpen = false;
+    if (menuReturnFocus && menuPanel.contains(document.activeElement)) menuReturnFocus.focus({ preventScroll: true });
+    menuReturnFocus = null;
     allMenuBtns.forEach((el) => { el.classList.remove('is-open'); el.setAttribute('aria-expanded', 'false'); });
 
     menuPanel.classList.remove('links-visible');
@@ -1662,7 +1779,10 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       inner.className = 'rsg-card-inner';
 
       const video = document.createElement('video');
-      video.dataset.src = item.src;
+      // Cards are 140–260px wide, so they loop a light 8s, 480px, silent
+      // preview (~0.3 MB) rather than streaming the full clip (up to 60s /
+      // 10 MB each). The lightbox still plays item.src, full length with sound.
+      video.dataset.src = item.src.replace('.mp4', '-preview.mp4');
       video.poster = item.src.replace('.mp4', '-poster.jpg');
       video.muted = true;
       video.loop = true;
@@ -1846,9 +1966,16 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     return Array.from(document.querySelectorAll('#rsgWheel video'));
   }
 
+  // Where focus returns when the lightbox closes (the card that opened it).
+  let returnFocusTo = null;
+
   window.openLightbox = function (index) {
     const item = galleryItems[index];
     if (!item) return;
+    // Only hand focus back for keyboard use: re-focusing a card also fires its
+    // focus->hover highlight, which a mouse user shouldn't be left with.
+    const active = document.activeElement;
+    returnFocusTo = active && active.matches && active.matches(':focus-visible') ? active : null;
     video.poster = item.src.replace('.mp4', '-poster.jpg');
     video.src = item.src;
     titleEl.textContent = item.eyebrow;
@@ -1859,9 +1986,14 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
     wheelVideos().forEach(v => v.pause());
     // Defer play so transition starts cleanly
     setTimeout(() => { video.play().catch(() => {}); }, 60);
+    // Keyboard/screen-reader users land inside the dialog, not behind it.
+    closeBtn.focus({ preventScroll: true });
   };
 
   function closeLightbox() {
+    // Idempotent: the close button lives on the overlay, whose own click
+    // handler also closes, so one click can reach this twice.
+    if (!overlay.classList.contains('is-open')) return;
     overlay.classList.remove('is-open');
     overlay.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('lb-open');
@@ -1873,6 +2005,8 @@ document.querySelectorAll('.btn-gold').forEach(attachBtnSwap);
       video.load();
       wheelVideos().forEach(v => { if (v.dataset.inview === '1') v.play().catch(() => {}); });
     }, 480);
+    if (returnFocusTo && typeof returnFocusTo.focus === 'function') returnFocusTo.focus({ preventScroll: true });
+    returnFocusTo = null;
   }
   window.closeLightbox = closeLightbox;
 

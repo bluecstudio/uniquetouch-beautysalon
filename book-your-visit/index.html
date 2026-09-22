@@ -4,7 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unique Touch Beauty Salon — Find Your Service</title>
+  <meta name="description" content="Find the treatment that's right for you at Unique Touch Beauty Salon in Curaçao. See the time, the price and what to expect, then book your moment.">
+  <link rel="canonical" href="https://uniquetouch.beauty/book-your-visit/">
+  <meta name="theme-color" content="#0A0906">
+  <!-- Link previews (WhatsApp, iMessage, Instagram, Facebook, X) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Unique Touch Beauty Salon">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Unique Touch Beauty Salon — Find Your Service">
+  <meta property="og:description" content="Find the treatment that's right for you. See the time, the price and what to expect, then book your moment.">
+  <meta property="og:url" content="https://uniquetouch.beauty/book-your-visit/">
+  <meta property="og:image" content="https://uniquetouch.beauty/brand_assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Unique Touch Beauty Salon wordmark over a candlelit treatment room">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="/brand_assets/favicon-192.png">
+  <link rel="apple-touch-icon" href="/brand_assets/favicon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
@@ -103,6 +119,8 @@
       width: 0; height: 0; min-width: 0; pointer-events: none; border-color: transparent;
     }
     .menu-panel.is-open { pointer-events: auto; border-color: rgba(201,168,76,0.75); }
+    /* Keep the collapsed panel's links out of the tab order (see index.html). */
+    .menu-panel:not(.is-open) { visibility: hidden; }
     .menu-panel-inner {
       opacity: 0; padding: 24px 36px; transition: opacity 0.2s ease;
       width: 100%; box-sizing: border-box; display: flex; flex-direction: column;
@@ -153,6 +171,7 @@
       letter-spacing: 0; text-transform: capitalize; color: var(--bg); background: var(--gold);
       height: 2.25rem; padding: 0 12px; border-radius: 100px; text-decoration: none;
       overflow: hidden; isolation: isolate; min-width: 0; cursor: pointer; border: none;
+      white-space: nowrap; /* a fixed-height pill must never wrap its label */
     }
     .btn-gold::before {
       content: ''; position: absolute; inset: 0; background: var(--gold-light);
@@ -381,6 +400,12 @@
       padding: clamp(2rem, 4vw, 4.5rem) clamp(1.75rem, 3.4vw, 4rem);
       overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     }
+    /* The fixed "Back to services" button (top-left) sat on top of the
+       eyebrow line wherever 4vw of top padding was too little to clear it —
+       every width below ~1366px. */
+    @media (min-width: 768px) and (max-width: 1365px) {
+      .detail-content { padding-top: 4.75rem; }
+    }
     .detail-content::-webkit-scrollbar { display: none; }
     .detail-content { scrollbar-width: none; }
 
@@ -395,7 +420,9 @@
     .d-title {
       font-family: 'Cinzel', serif; font-weight: 400; line-height: 1;
       letter-spacing: -0.005em; white-space: nowrap;
-      font-size: clamp(2.4rem, 7dvh, 5rem); margin-top: 0.6rem;
+      /* Height-driven, but capped by width: on tall, narrow tablets (iPad
+         portrait) 7dvh made "Facial & Skin" wider than its half-screen column. */
+      font-size: min(clamp(2.4rem, 7dvh, 5rem), 5.8vw); margin-top: 0.6rem;
       transform-origin: top left; visibility: hidden;
       background: linear-gradient(180deg, #ffffff 0%, #d4b96a 42%, #6b4e1a 100%);
       -webkit-background-clip: text; background-clip: text;
@@ -405,7 +432,11 @@
     .d-intro p {
       font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: 0.975rem;
       line-height: 1.75; color: var(--white); margin-bottom: 0.9rem;
-      white-space: nowrap; overflow: hidden;
+      /* Was nowrap + overflow:hidden: fine in a wide desktop column, but on
+         tablets and small laptops the line was wider than the column and got
+         clipped at both ends ("ealthy skin never goes out of sty"). Balanced
+         wrapping keeps it one line wherever it fits. */
+      text-wrap: balance;
     }
     .d-intro p:first-child {
       font-size: 1.5rem; line-height: 1.4;
@@ -510,7 +541,11 @@
 
     /* details grid */
     .d-grid-wrap { position: relative; border-radius: 14px; overflow: hidden; }
-    .d-grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 5.5rem; }
+    /* Rows grow with their content (a two-line "Best For" used to spill out of
+       a fixed 5.5rem row on phones and tablets), but stay EQUAL — 1fr rows in
+       an auto-height grid all resolve to the tallest one — so the pulse
+       lines at 50% (.d-cross) still land exactly on the cell borders. */
+    .d-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(5.5rem, 1fr)); grid-auto-rows: minmax(5.5rem, 1fr); }
     .d-cell { background: transparent; padding: 1.1rem 1.25rem; }
     .d-cell:nth-child(1), .d-cell:nth-child(3) { border-right: 1px solid rgba(201,168,76,0.16); }
     .d-cell:nth-child(1), .d-cell:nth-child(2) { border-bottom: 1px solid rgba(201,168,76,0.16); }
@@ -695,6 +730,50 @@
       opacity: 0;
     }
     #scroll-progress.is-active { opacity: 1; }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      margin: -1px; padding: 0; border: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    /* The reel region takes focus programmatically (after a detail closes)
+       so arrow keys keep working; the centred item's own highlight is the
+       visible indicator, not a ring around the whole screen. */
+    #experience:focus-visible { outline: none; }
+
+    /* ── KEYBOARD FOCUS + PRESS STATES ──
+       .btn-ghost's `outline: none` also beat the global :focus-visible ring,
+       so the "Back to services" button had no keyboard focus indicator.
+       Press feedback is opacity/transform only; the reel's slots and titles
+       have per-frame inline transforms/opacity (tick()), so their pressed
+       look goes on children that tick() never writes. */
+    .btn-ghost:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .btn-gold::after,
+    .btn-ghost::after {
+      content: ''; position: absolute; inset: 0; border-radius: 100px;
+      opacity: 0; pointer-events: none; z-index: 0; transition: opacity 0.25s ease;
+    }
+    .btn-gold::after  { background: rgba(10, 9, 6, 0.16); }
+    .btn-ghost::after { background: rgba(201, 168, 76, 0.16); }
+    .btn-gold:active::after,
+    .btn-ghost:active::after { opacity: 1; transition-duration: 0s; }
+
+    .menu-btn:active .menu-btn-label { opacity: 0.6; }
+    .menu-btn:active .menu-btn-icon { transform: rotate(180deg) scale(0.85); }
+    .menu-nav-links a:active { opacity: 0.7; }
+    .menu-social-link { transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    .menu-social-link:active { transform: scale(0.9); transition-duration: 0.2s, 0.2s, 0.2s, 0.08s; }
+    .d-pill { transition: border-color 0.5s cubic-bezier(0.22,0.8,0.32,1), background 0.4s cubic-bezier(0.22,0.8,0.32,1), color 0.3s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    .d-pill:active { transform: scale(0.96); transition-duration: 0.5s, 0.4s, 0.3s, 0.08s; }
+    .pill-info-btn:active { transform: scale(0.88); }
+    .d-acc-head:active { opacity: 0.7; }
+    .bm-newtab:active { opacity: 0.7; }
+    .bm-close:active { transform: rotate(90deg) scale(0.9); }
+    .img-slot:active .slot-grad { opacity: 0.55; }
+    .tr-row:active .tr-text-base { opacity: 0.7; }
   </style>
 </head>
 <body>
@@ -726,7 +805,10 @@
   </button>
 
 <!-- ═══════════ EXPERIENCE ═══════════ -->
-  <section id="experience" aria-label="Service experience">
+  <section id="experience" aria-label="Service experience" tabindex="-1">
+    <h1 class="sr-only">Find your treatment at Unique Touch Beauty Salon</h1>
+    <p class="sr-only">Browse treatments with the arrow keys, then press Enter to open one.</p>
+    <p class="sr-only" id="reelStatus" aria-live="polite"></p>
     <div class="chrome-counter" data-chrome>
       <span class="counter"><span id="counterCur">01</span><span class="sep">/</span><span id="counterTotal">05</span></span>
       <span class="counter-rule"></span>
@@ -779,6 +861,7 @@
       microcopy: 'Let skilled, caring hands melt the tension away.',
       img: '/brand_assets/massage-card.webp',
       video: '/brand_assets/serivce-page-massage/serivce-page-massage.mp4',
+      reel: '/brand_assets/service-reel-massage.mp4',
       intro: [
         'Where tension ends and relaxation begins.',
         'Time dedicated entirely to your wellbeing.'
@@ -802,6 +885,7 @@
       microcopy: 'A personalized facial designed for your unique skin.',
       img: '/brand_assets/facial-service.webp',
       video: '/brand_assets/gallery-001.mp4',
+      reel: '/brand_assets/service-reel-facial.mp4',
       intro: [
         'Healthy skin never goes out of style.',
         'Tailored treatments for a complexion that feels refreshed and radiant.'
@@ -826,6 +910,7 @@
       microcopy: 'Total smoothness. Total confidence. Utterly you.',
       img: '/brand_assets/waxing-card.webp',
       video: '/brand_assets/service-page-waxing.mp4',
+      reel: '/brand_assets/service-reel-waxing.mp4',
       intro: [
         'Smooth skin. Confident moments.',
         'Precision waxing designed around your comfort.'
@@ -851,6 +936,7 @@
       microcopy: 'Full, beautiful lashes that speak for themselves.',
       img: '/brand_assets/lashes-card.webp',
       video: '/brand_assets/gallery-003.mp4',
+      reel: '/brand_assets/service-reel-lashes.mp4',
       intro: [
         'Effortless beauty starts with the eyes.',
         'Customized lashes designed to look natural, feel comfortable, and turn heads.'
@@ -876,6 +962,7 @@
       microcopy: 'Every detail considered, every nail perfected.',
       img: '/brand_assets/nails-card.webp',
       video: '/brand_assets/service-page-nails.mp4',
+      reel: '/brand_assets/service-reel-nails.mp4',
       intro: [
         'More than a manicure.',
         'A polished expression of your personal style.'
@@ -899,6 +986,7 @@
       microcopy: 'A flawless finish, made to feel like you.',
       img: '/brand_assets/makeup-service.webp',
       video: '/brand_assets/service_page_makeup/service_page_makeup.mp4',
+      reel: '/brand_assets/service-reel-makeup.mp4',
       intro: [
         'Refined, radiant, unforgettable.',
         'Makeup designed to enhance—not hide—what makes you beautiful.'
@@ -938,9 +1026,13 @@
     const menuPanel = document.getElementById('menuPanel');
     const menuBackdrop = document.getElementById('menuBackdrop');
     let isOpen = false;
+    // Set only for keyboard opens: where focus goes back to on close.
+    let menuReturnFocus = null;
     window.__menuOpen = () => isOpen;
     function openMenu() {
       if (isOpen) return; isOpen = true;
+      const active = document.activeElement;
+      menuReturnFocus = active && active.matches && active.matches('.menu-btn:focus-visible') ? active : null;
       menuBtn.classList.add('is-open'); menuBtn.setAttribute('aria-expanded', 'true');
       menuBackdrop.classList.add('is-open'); menuPanel.classList.add('is-open');
       const r = menuBtn.getBoundingClientRect();
@@ -955,12 +1047,20 @@
       setTimeout(() => {
         menuPanel.style.transition = 'height 0.36s cubic-bezier(0.65,0,0.35,1)';
         menuPanel.style.height = '256px';
-        setTimeout(() => menuPanel.classList.add('links-visible'), 120);
+        setTimeout(() => {
+          menuPanel.classList.add('links-visible');
+          if (menuReturnFocus) {
+            const first = Array.from(menuPanel.querySelectorAll('a')).find((a) => a.offsetParent !== null);
+            if (first) first.focus({ preventScroll: true });
+          }
+        }, 120);
         setTimeout(() => { menuPanel.style.height = 'auto'; }, 360);
       }, 300);
     }
     function closeMenu() {
       if (!isOpen) return; isOpen = false;
+      if (menuReturnFocus && menuPanel.contains(document.activeElement)) menuReturnFocus.focus({ preventScroll: true });
+      menuReturnFocus = null;
       menuBtn.classList.remove('is-open'); menuBtn.setAttribute('aria-expanded', 'false');
       menuBackdrop.classList.remove('is-open'); menuPanel.classList.remove('links-visible');
       setTimeout(() => {
@@ -1076,7 +1176,10 @@
       const slot = document.createElement('div'); slot.className = 'img-slot';
       const inner = document.createElement('div'); inner.className = 'img-slot-inner';
       const vid = document.createElement('video');
-      vid.dataset.src = cat.video; vid.poster = cat.img; vid.muted = true; vid.loop = true;
+      // The reel loops a light 8s cut (same 720px, ~0.9 MB) — up to three
+      // slots play at once, and the full clips (up to 31s / 4.5 MB each) made
+      // this the heaviest page. Opening a service still plays cat.video.
+      vid.dataset.src = cat.reel || cat.video; vid.poster = cat.img; vid.muted = true; vid.loop = true;
       vid.playsInline = true; vid.setAttribute('playsinline', '');
       vid.disablePictureInPicture = true; vid.preload = 'metadata';
       // No autoplay: the tick loop plays only the ~3 slots nearest the viewport
@@ -1198,6 +1301,7 @@
       activeIdx = rounded;
       slotWraps[activeIdx].classList.add('is-current');
       counterCur.textContent = String((activeIdx % N) + 1).padStart(2, '0');
+      announceActive();
     }
 
     // cursor ring
@@ -1241,6 +1345,45 @@
     d = Math.max(-WHEEL_CAP, Math.min(WHEEL_CAP, d));
     targetPos += d / LAYOUT.pixelsPerItem;
   }
+
+  // ── keyboard ──
+  // The reel was wheel/touch/click only, so keyboard users couldn't reach a
+  // single treatment. ↑/↓ (and ←/→) step one slot through the same eased
+  // targetPos the wheel drives; Enter/Space opens the centred one.
+  const reelStatus = document.getElementById('reelStatus');
+  let announceTimer = null;
+  function announceActive() {
+    // Debounced: the entrance and fast browsing pass through several slots,
+    // and only the one that settles should be read out.
+    clearTimeout(announceTimer);
+    announceTimer = setTimeout(() => {
+      if (!entranceDone || detailOpen) return;
+      const i = activeIdx % N;
+      reelStatus.textContent = `${CATS[i].name}, ${i + 1} of ${N}.`;
+    }, 400);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (detailOpen || bookingOpen || phase !== 'idle') return;
+    if (window.__menuOpen && window.__menuOpen()) return;
+    const step = (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 1
+               : (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ? -1 : 0;
+    if (step) {
+      e.preventDefault();
+      if (!entranceDone) skipEntrance();
+      if (navigating) { gsap.killTweensOf(navProxy); navigating = false; }
+      lastWheelTime = performance.now();
+      targetPos = Math.round(targetPos) + step;
+      return;
+    }
+    // Enter/Space only when nothing else has focus — a focused link or button
+    // (e.g. the Menu button) keeps its own native activation.
+    if ((e.key === 'Enter' || e.key === ' ') && (e.target === document.body || e.target === section)) {
+      e.preventDefault();
+      if (!entranceDone) skipEntrance();
+      openDetail(activeIdx);
+    }
+  });
 
   section.addEventListener('pointerenter', () => { onSection = true; });
   section.addEventListener('pointerleave', () => { onSection = false; });
@@ -1465,6 +1608,10 @@
     mb.style.opacity = '0'; mb.style.pointerEvents = 'none';
 
     requestAnimationFrame(() => runFlipOpen());
+    // Move focus into the panel (it replaces the whole screen), so Tab walks
+    // its treatment pills and booking button rather than the hidden reel.
+    const back = detailEl.querySelector('[data-detail-close]');
+    if (back) back.focus({ preventScroll: true });
   }
 
   function runFlipOpen() {
@@ -1564,6 +1711,9 @@
     const mb2 = document.getElementById('menuBtn');
     mb2.style.opacity = ''; mb2.style.pointerEvents = '';
     if (!bookingOpen) document.body.style.overflow = 'hidden';
+    // The focused control was just removed with the panel; park focus on the
+    // reel so arrow keys / Enter keep working from where the visitor left.
+    section.focus({ preventScroll: true });
   }
 
   /* ════════════════════ BOOKING MODAL ════════════════════ */
