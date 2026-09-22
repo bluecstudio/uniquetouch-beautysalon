@@ -8,3 +8,15 @@ node_modules/
 temporary screenshots/
 _originals_backup/
 *.log
+
+# Dev-only files — kept locally, never published (GitHub Pages serves the
+# whole repo root, so anything tracked here is public on uniquetouch.beauty)
+CLAUDE.md
+SKILL.md
+package.json
+package-lock.json
+serve.mjs
+screenshot.mjs
+scroll-sim.mjs
+nextjs-transitions/
+wireframe_assets/
