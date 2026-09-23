@@ -677,6 +677,11 @@
       .tr-row { padding: 0 var(--gutter); }
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .img-slot::before,
+      .d-pill::before { animation: none; }
+    }
+
     /* ════════ BOOKING MODAL ════════ */
     #bookingModal { position: fixed; inset: 0; z-index: 40; display: none; }
     #bookingModal.is-active { display: block; }

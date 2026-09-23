@@ -546,6 +546,9 @@
       transform-origin: center;
     }
     @keyframes vb-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .vb-ring-text { animation: none; }
+    }
 
     /* Video circle — inset from ring edge to leave room for 24px text */
     .vb-media {
@@ -687,6 +690,9 @@
     @keyframes vr-bar {
       from { transform: scaleY(0.4); }
       to   { transform: scaleY(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vr-wave span { animation: none; height: 3px !important; opacity: 0.35; }
     }
 
     /* ── BUTTONS ─────────────────────────────── */
@@ -1087,6 +1093,9 @@
       );
       animation: gradient-rotate 10s linear infinite;
       z-index: 0;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .svc-card.is-center::before { animation: none; }
     }
     /* Glass box + actions only visible on center card — fade in/out */
     .svc-card .card-glass-box {
@@ -1878,6 +1887,9 @@
       height: 100%;
       animation: vb-spin 22s linear infinite;
     }
+    @media (prefers-reduced-motion: reduce) {
+      .cert-elipse-ring { animation: none; }
+    }
 
     /* Course rail */
     .course-rail {
@@ -1927,6 +1939,9 @@
          .course-card-inner is already fully opaque avoids that: just the
          thin gold line appears, never a filled blob. */
       opacity: var(--card-border-opacity, 1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .course-slide.active::before { animation: none; }
     }
     .course-slide.preview {
       width: 88px;
@@ -4990,6 +5005,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (typeof initServicesReveal === 'function') initServicesReveal();
       ScrollTrigger.refresh();
 
+      // Reduced motion: skip the word-FLIP + ellipse-morph choreography
+      // entirely — hero is already visible behind the overlay above, so a
+      // single short opacity fade is enough to reveal it.
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        gsap.to(preloader, { opacity: 0, duration: 0.4, ease: 'power2.inOut', onComplete: releaseScrollLock });
+        return;
+      }
+
       // Capture preloader word positions (viewport-relative)
       const uRect = plUnique.getBoundingClientRect();
       const tRect = plTouch.getBoundingClientRect();
@@ -5274,6 +5297,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Proxy for slowing the CSS ring spin during scroll
     const spinProxy = { dur: 22 };
+
+    // Reduced motion: skip this whole pin/scroll-driven expand sequence.
+    // #services' own reduced-motion branch (see initServicesReveal()) never
+    // wires up the step machine that shrinks this pin's oversized `end` down
+    // to a releasable size — so if this pin were built anyway, it would
+    // stay locked (badge frozen, mid-expand) for its full multi-viewport
+    // safety-buffer distance and Services would never become reachable.
+    // Every element below defaults to opacity:0 in its own CSS rule and is
+    // only ever revealed by this timeline, so skipping construction entirely
+    // leaves the small circular video badge (already autoplaying via its
+    // own IntersectionObserver above) as the correct resting state — no
+    // gsap.set() needed to snap anything.
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reducedMotion) {
 
     // Hero's own pin runs LONGER than its internal animation alone needs
     // (HERO_ORIG_VH), so it stays position:fixed — and the video stays
@@ -5654,6 +5691,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // hasn't claimed this yet at page load, so there's nothing darker to
     // default to.
     window._svcVmFadeTarget = 0;
+
+    } // end !reducedMotion
 
     // Reviews content's reveal (title -> headline -> desc -> button) has moved
     // to the scrubbed, reversible warp-in sequence in initServicesReveal()'s
@@ -8411,6 +8450,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const ease    = "expo.out";
   const dur     = 0.9;
   const stagger = 0.1;
+  // Reduced motion: leave #socials' title/desc in normal flow, fully visible,
+  // with no pre-hide and no scroll-triggered reveal/re-hide.
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const groups = [
     // #services is handled by initServicesReveal() (pinned + scrubbed assemble)
@@ -8429,14 +8471,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Hide immediately so there's no flash of visible content before scroll fires
-  groups.forEach(function ([sectionSel, selectors]) {
-    const els = collectEls(sectionSel, selectors);
-    if (els.length) gsap.set(els, { opacity: 0, y: 80 });
-  });
+  if (!reducedMotion) {
+    groups.forEach(function ([sectionSel, selectors]) {
+      const els = collectEls(sectionSel, selectors);
+      if (els.length) gsap.set(els, { opacity: 0, y: 80 });
+    });
+  }
 
   // Defer trigger creation until after window.load — by then the hero pin spacer
   // (4× viewport) exists and ScrollTrigger can measure correct element offsets.
   window.addEventListener('load', function () {
+    if (reducedMotion) return;
     groups.forEach(function ([sectionSel, selectors]) {
       const section = document.querySelector(sectionSel);
       if (!section) return;
